@@ -631,7 +631,7 @@ def checklist_one(cid: int, u=Depends(current_user)):
     c["errors"] = validate_cl(c["criteria"])
     # сколько текущих оценок сделано по другой версии — от этого зависит, показывать ли «Применить к старым оценкам»
     c["stale"] = one("SELECT count(*) AS n FROM evaluations WHERE is_current AND checklist_id<>%s AND status<>'running'", cid)["n"] \
-        if c["status"] == "published" else 0
+        if c["status"] == "published" and u["role"] in ("qa","adm") else 0
     return c
 
 
@@ -972,6 +972,8 @@ def user_upd(uid: int, body: dict = Body(...), u=Depends(roles("adm"))):
         bad("Активность должна быть логическим значением",422)
     if role not in ("qa", "op", "lead", "adm"):
         bad("Неизвестная роль", 422)
+    if role == "op" and one("SELECT id FROM users WHERE role='op' AND name=%s AND id<>%s",t["name"],uid):
+        bad("Имя уже связано с другим оператором; требуется сопоставление идентичности",409)
     if role == "lead" and active and not team:
         bad("Для руководителя требуется группа", 422)
     run("UPDATE users SET role=%s, active=%s, team=%s WHERE id=%s", role, active, team, uid)
