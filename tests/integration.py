@@ -42,6 +42,11 @@ class Workflows(unittest.TestCase):
         own=db.one("SELECT id FROM dialogs WHERE operator=%s LIMIT 1",u["name"])["id"]
         db.run("UPDATE dialogs SET wf_status='review' WHERE id=%s",own)
         self.assertEqual(op.get("/api/dialogs/"+own).status_code,404)
+        admin,_=self.login("adm")
+        duplicate=admin.post("/api/users",json={"login":"duplicate_identity","name":u["name"],"role":"qa"})
+        self.assertEqual(duplicate.status_code,200)
+        uid=db.one("SELECT id FROM users WHERE login='duplicate_identity'")["id"]
+        self.assertEqual(admin.patch(f"/api/users/{uid}",json={"role":"op"}).status_code,409)
         lead,manager=self.login("lead")
         foreign_group=db.one("SELECT id FROM dialogs WHERE team<>%s LIMIT 1",manager["team"])["id"]
         self.assertEqual(lead.get("/api/dialogs/"+foreign_group).status_code,404)
