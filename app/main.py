@@ -181,15 +181,13 @@ def list_dialogs(q: str = "", status: str = "", lang: str = "", channel: str = "
         cond.append("d.wf_status NOT IN ('new','evaluating','review','error')")
     rows = all_(LIST_SQL + " WHERE " + " AND ".join(cond) + " ORDER BY d.occurred_at DESC", *args)
     if failed:
-        cl = {c["id"]: c for c in engine.active_checklist()["criteria"]}
-        if failed in cl:
-            ids = [r["eval_id"] for r in rows if r["eval_id"]]
-            bad_ids = set()
-            if ids:
-                for it in all_("SELECT eval_id, answer FROM eval_items WHERE crit_id=%s AND eval_id = ANY(%s)", failed, ids):
-                    if engine.is_failed(cl[failed], it["answer"]):
-                        bad_ids.add(it["eval_id"])
-            rows = [r for r in rows if r["eval_id"] in bad_ids]
+        ids=[r["eval_id"] for r in rows if r["eval_id"]]
+        matches=set()
+        for item in all_("""SELECT i.*, e.checklist_id FROM eval_items i JOIN evaluations e ON e.id=i.eval_id
+                            WHERE i.crit_id=%s AND i.eval_id=ANY(%s)""",failed,ids) if ids else []:
+            c=next((c for c in engine.checklist(item["checklist_id"])["criteria"] if c["id"]==failed),None)
+            if c and engine.is_failed(c,item["answer"]): matches.add(item["eval_id"])
+        rows=[r for r in rows if r["eval_id"] in matches]
     return rows
 
 
@@ -399,6 +397,8 @@ def override(did: str, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
     if len(reason) < 5:
         bad("Укажите причину изменения: она попадёт в историю и в отчёт о расхождениях с моделью", 422)
     old = engine.items_of(e["id"])[c["id"]]["answer"]
+    if old == ans:
+        return {"total":e["total"]}
     eid = engine.override(did, c["id"], ans, reason, u["id"])
     new = one("SELECT total FROM evaluations WHERE id=%s", eid)["total"]
     engine.event(did, u["id"], f"Критерий {c['id'][1:]} «{c['name']}»: {lbl(c, old)} → {lbl(c, ans)}. {reason}")
@@ -922,7 +922,7 @@ def my_stats(start: str = "", end: str = "", u=Depends(roles("op"))):
 def calibration(u=Depends(roles("qa"))):
     """Ответы модели (первая оценка) против эталонной разметки."""
     gold = all_("SELECT * FROM gold")
-    crit = {c["id"]: c for c in engine.active_checklist()["criteria"]}
+    names = {}
     g_by = {}
     for g in gold:
         g_by.setdefault(g["dialog_id"], {})[g["crit_id"]] = g
@@ -932,13 +932,16 @@ def calibration(u=Depends(roles("qa"))):
         if not first:
             continue
         cl = engine.checklist(first["checklist_id"])
+        crit={c["id"]:c for c in cl["criteria"]}
         items = engine.items_of(first["id"])
         for cid, g in gs.items():
             it = items.get(cid)
             if not it or it["status"] != "ok" or cid not in crit:
                 continue
             ok = it["ai_answer"] == g["answer"]
-            p = per.setdefault(cid, [0, 0]); p[0] += 1; p[1] += ok
+            key=(cl["id"],cid)
+            names[key]=f"{crit[cid]['name']} · v{cl['version']}"
+            p = per.setdefault(key, [0, 0]); p[0] += 1; p[1] += ok
             if not ok:
                 dis.append({"dialog": did, "crit": cid, "ai": it["ai_answer"], "gold": g["answer"], "unsure": g["unsure"],
                             "explanation": it["explanation"], "confidence": it["confidence"]})
@@ -948,7 +951,7 @@ def calibration(u=Depends(roles("qa"))):
             maes.append(abs(ga - aa))
     n = sum(p[0] for p in per.values())
     return {"agreement": round(sum(p[1] for p in per.values()) / n * 100, 1) if n else None, "answers": n,
-            "per": [{"crit": k, "name": crit[k]["name"], "n": v[0], "ok": v[1], "rate": round(v[1] / v[0] * 100)} for k, v in sorted(per.items())],
+            "per": [{"crit": k[1], "checklist_id":k[0], "name": names[k], "n": v[0], "ok": v[1], "rate": round(v[1] / v[0] * 100)} for k, v in sorted(per.items())],
             "disagreements": dis, "mae": round(sum(maes) / len(maes), 2) if maes else None, "dialogs": len(maes)}
 
 

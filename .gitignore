@@ -9,3 +9,5 @@ tmp*/
 runs/web_backup_before_fixes/
 runs/app_backup_before_fixes/
 *.log
+
+tests/node_modules/

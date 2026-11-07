@@ -251,8 +251,14 @@ def run_evaluation(eval_id, only=None):
         one_crit(first)  # первый запрос записывает кеш транскрипта
         with ThreadPoolExecutor(8) as ex:
             list(ex.map(one_crit, rest))
-    status, reasons, total, critical = finalize(eval_id)
-    run("UPDATE evaluations SET seconds=%s WHERE id=%s", round(time.time() - t0, 2), eval_id)
+    complete_evaluation(eval_id, round(time.time() - t0, 2))
+
+
+@atomic_workflow
+def complete_evaluation(eval_id, seconds=None):
+    finalize(eval_id)
+    if seconds is not None:
+        run("UPDATE evaluations SET seconds=%s WHERE id=%s",seconds,eval_id)
     after_evaluation(eval_id)
 
 
@@ -342,8 +348,12 @@ def _plan_job(title, kind, dialog_ids, user_id, cl=None, only_crit=None):
         d=one("SELECT wf_status FROM dialogs WHERE id=%s",did)
         if not d: raise HTTPException(404,"Диалог не найден")
         if d["wf_status"]=="appeal": raise HTTPException(409,"Сначала завершите апелляцию")
+    cl = cl or active_checklist()
     existing=one("SELECT * FROM jobs WHERE dialog_ids=%s AND finished_at IS NULL ORDER BY id DESC LIMIT 1",J(dialog_ids))
-    if existing: return {"id":existing["id"],"title":existing["title"],"dialogs":len(dialog_ids)}, []
+    if existing:
+        if existing["only_crit"] != (only_crit or None) or one("SELECT id FROM evaluations WHERE job_id=%s AND checklist_id<>%s",existing["id"],cl["id"]):
+            raise HTTPException(409,"Другой вариант оценки уже выполняется")
+        return {"id":existing["id"],"title":existing["title"],"dialogs":len(dialog_ids)}, []
     cl = cl or active_checklist()
     job = run("INSERT INTO jobs(title, kind, dialog_ids, only_crit, created_by) VALUES (%s,%s,%s,%s,%s) RETURNING id",
               title, kind, J(dialog_ids), J(only_crit) if only_crit else None, user_id)["id"]
@@ -368,8 +378,7 @@ def _safe_run(eid):
         traceback.print_exc()
         try:
             run("UPDATE eval_items SET status='error', error='Внутренняя ошибка сервера' WHERE eval_id=%s AND status='pending'", eid)
-            finalize(eid)
-            after_evaluation(eid)
+            complete_evaluation(eid)
         except Exception:
             traceback.print_exc()
 
@@ -386,11 +395,24 @@ def _finish_job(job_id, user_id, title):
 
 
 def retry_failed(eval_id, user_id):
+    _prepare_retry(eval_id)
+    DIALOG_POOL.submit(_safe_run, eval_id)
+
+
+@atomic_workflow
+def _prepare_retry(eval_id):
+    from fastapi import HTTPException
+    ev=one("SELECT * FROM evaluations WHERE id=%s",eval_id)
+    if not ev or ev["status"]!="partial" or not ev["is_current"]:
+        raise HTTPException(409,"Оценка уже запущена или не требует повтора")
+    if one("SELECT id FROM evaluations WHERE dialog_id=%s AND status='running'",ev["dialog_id"]):
+        raise HTTPException(409,"Диалог уже оценивается")
+    if one("SELECT id FROM appeals WHERE dialog_id=%s AND status='open'",ev["dialog_id"]):
+        raise HTTPException(409,"Сначала завершите апелляцию")
     run("UPDATE eval_items SET status='pending', error=NULL WHERE eval_id=%s AND status='error'", eval_id)
     run("UPDATE evaluations SET status='running', finished_at=NULL, seconds=NULL WHERE id=%s", eval_id)
     d = one("SELECT dialog_id FROM evaluations WHERE id=%s", eval_id)["dialog_id"]
     run("UPDATE dialogs SET wf_status='evaluating' WHERE id=%s", d)
-    DIALOG_POOL.submit(_safe_run, eval_id)
 
 
 def recalc_all(cl, user_id):

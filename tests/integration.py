@@ -42,9 +42,48 @@ class Workflows(unittest.TestCase):
         own=db.one("SELECT id FROM dialogs WHERE operator=%s LIMIT 1",u["name"])["id"]
         db.run("UPDATE dialogs SET wf_status='review' WHERE id=%s",own)
         self.assertEqual(op.get("/api/dialogs/"+own).status_code,404)
-        lead,_=self.login("lead")
+        lead,manager=self.login("lead")
+        foreign_group=db.one("SELECT id FROM dialogs WHERE team<>%s LIMIT 1",manager["team"])["id"]
+        self.assertEqual(lead.get("/api/dialogs/"+foreign_group).status_code,404)
+        self.assertTrue(all(d["team"]==manager["team"] for d in lead.get("/api/dialogs").json()))
         self.assertEqual(lead.post("/api/appeals/1/withdraw",json={}).status_code,403)
         self.assertEqual(lead.post("/api/appeals/1/decide",json={}).status_code,403)
+
+    def test_z_checklist_publication_preserves_history(self):
+        qa,_=self.login("qa")
+        before=db.all_("SELECT id,total,checklist_id FROM evaluations ORDER BY id")
+        calibration=qa.get("/api/calibration").json()
+        r=qa.post("/api/checklists/draft")
+        self.assertEqual(r.status_code,200,r.text)
+        cid=r.json()["id"]
+        criteria=engine.checklist(cid)["criteria"]
+        criteria[0]["id"]="c99"
+        r=qa.put(f"/api/checklists/{cid}",json={"criteria":criteria})
+        self.assertEqual(r.status_code,200,r.text)
+        r=qa.post(f"/api/checklists/{cid}/publish",json={})
+        self.assertEqual(r.status_code,200,r.text)
+        self.assertEqual(db.all_("SELECT id,total,checklist_id FROM evaluations ORDER BY id"),before)
+        self.assertEqual(qa.get("/api/calibration").json()["answers"],calibration["answers"])
+        self.assertEqual(qa.get("/api/stats/overview").status_code,200)
+
+    def test_retry_is_serialized(self):
+        e=db.one("SELECT * FROM evaluations WHERE is_current LIMIT 1")
+        db.run("UPDATE evaluations SET status='partial' WHERE id=%s",e["id"])
+        db.run("UPDATE eval_items SET status='error' WHERE eval_id=%s AND crit_id='c1'",e["id"])
+        db.run("UPDATE appeals SET status='withdrawn' WHERE dialog_id=%s AND status='open'",e["dialog_id"])
+        engine._prepare_retry(e["id"])
+        with self.assertRaises(main.HTTPException) as error: engine._prepare_retry(e["id"])
+        self.assertEqual(error.exception.status_code,409)
+
+    def test_legacy_migration(self):
+        db.run("ALTER TABLE users DROP CONSTRAINT users_role_check")
+        uid=db.run("INSERT INTO users(login,name,role,pw_hash) VALUES ('legacy_test','Legacy test','head','unused') RETURNING id")["id"]
+        db.init_schema()
+        user=db.one("SELECT * FROM users WHERE id=%s",uid)
+        self.assertEqual(user["role"],"qa")
+        self.assertFalse(user["active"])
+        self.assertEqual(user["login"],"legacy_test")
+        self.assertEqual(self.client.post(f"/api/auth/demo/{uid}").status_code,404)
 
     def test_full_review_cycle_with_fake_model(self):
         qa,u=self.login("qa")
@@ -77,6 +116,12 @@ class Workflows(unittest.TestCase):
         record={"id":str(uuid.uuid4()),"operator":"external-op","team":"external-team","transcript":[{"speaker":"operator","text":"Здравствуйте"}],"channel":"agent chat","language":"RU","occurred_at":"2026-01-01T00:00:00Z"}
         self.assertTrue(import_record(record,config))
         self.assertFalse(import_record(record,config))
+        op,_=self.login("op",user["name"])
+        with patch.dict(os.environ,{"DYNAMICS_URL":config[0],"DYNAMICS_ENTITY":config[1]}):
+            # Imported dialog is not yet published: context does not grant access.
+            self.assertEqual(op.get("/api/integrations/dynamics/dialog/"+record["id"]).status_code,404)
+            qa,_=self.login("qa")
+            self.assertEqual(qa.get("/api/integrations/dynamics/dialog/"+record["id"]).status_code,200)
         record["transcript"][0]["text"]="Изменённый текст"
         with self.assertRaises(ValueError): import_record(record,config)
         self.assertEqual(db.one("SELECT count(*) n FROM external_dialogs")["n"],1)

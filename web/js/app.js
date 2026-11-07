@@ -11,11 +11,12 @@ const NAV = {
 };
 const HOME = { qa: "queue", op: "my", lead: "team", adm: "users" };
 const EXTRA = { qa: ["dialog", "jobs", "rules"], op: ["dialog"], lead: ["dialog", "rules"], adm: ["dialog", "jobs", "checklists"] };
-const TITLES = { queue: "Очередь проверки", upload: "Новые диалоги", jobs: "Оценка пакета", dialogs: "Диалоги", violations: "Грубые ошибки", appeals: "Апелляции",
+const TITLES = { development: "Задачи развития", integrations: "Dynamics 365", queue: "Очередь проверки", upload: "Новые диалоги", jobs: "Оценка пакета", dialogs: "Диалоги", violations: "Грубые ошибки", appeals: "Апелляции",
   checklists: "Чек-листы", calibration: "Калибровка модели", my: "Мои диалоги", rules: "Как меня оценивают", team: "Операторы", dashboard: "Обзор качества",
   users: "Пользователи", settings: "Модель и оценка", audit: "Журнал действий", dialog: "Диалог" };
 
 const entryRoute = location.hash;
+const dynamicsContextId = new URLSearchParams(location.search).get("dynamics_id");
 let me = null, pop = null, poll = null, curView = null, demoUsers = [];
 let lastList = (() => { try { return sessionStorage.getItem("cqa-last") } catch { return null } })();
 const go = h => { location.hash = "#/" + h; };
@@ -29,7 +30,7 @@ document.addEventListener("click", e => { if (pop && !e.target.closest(".pop") &
 document.addEventListener("keydown", e => { if (e.key === "Escape") closePop(); });
 
 async function boot() {
-  try { me = await api("/auth/me"); await loadCritNames(); route(); }
+  try { me = await api("/auth/me"); await loadCritNames(); await resolveDynamicsContext(); route(); }
   catch (e) { if (e.status === 401) renderLogin(); else $("#root").innerHTML = `<div class="loading">${esc(e.message)}</div>`; }
 }
 
@@ -48,7 +49,7 @@ async function renderLogin() {
   $("#root").innerHTML = `<main class="login">
    <section class="l1">
      <div class="brand" style="padding:0"><div class="mark">CQA</div><div><b>Контроль качества диалогов</b><span>Freedom Broker · контакт-центр</span></div></div>
-     <div><h1>Вход в систему</h1><p class="muted" style="margin-top:8px">Корпоративная учётная запись.</p></div>
+     <div><h1>Вход в систему</h1><p class="muted" style="margin-top:8px">Учётная запись Freedom Quality.</p></div>
      <form id="lf" novalidate>
        <label class="l" for="lu">Логин</label><input class="f" id="lu" autocomplete="username" required>
        <label class="l" for="lp">Пароль</label><input class="f" id="lp" type="password" autocomplete="current-password" required>
@@ -88,7 +89,16 @@ async function renderLogin() {
   $$("[data-demo]").forEach(b => b.onclick = () => busy(b, async () => { await api("/auth/demo/" + b.dataset.demo, { body: {} }); await afterLogin(); }));
   if (!demo.enabled) $("#lu")?.focus();
 }
-async function afterLogin() { me = await api("/auth/me"); await loadCritNames(); lastList = null; try { sessionStorage.removeItem("cqa-last") } catch {} history.replaceState(null, "", entryRoute.startsWith("#/dialog/") ? entryRoute : "#/" + HOME[me.role]); route(); }
+async function resolveDynamicsContext() {
+  const id=dynamicsContextId;
+  if(!id) return;
+  try {
+    const result=await api("/integrations/dynamics/dialog/"+encodeURIComponent(id));
+    history.replaceState(null,"","#/dialog/"+encodeURIComponent(result.dialog_id));
+  } catch(e) { toast(e.message,true); }
+}
+
+async function afterLogin() { me = await api("/auth/me"); await loadCritNames(); lastList = null; try { sessionStorage.removeItem("cqa-last") } catch {} history.replaceState(null, "", entryRoute.startsWith("#/dialog/") ? entryRoute : "#/" + HOME[me.role]); await resolveDynamicsContext(); route(); }
 async function switchRole(uid) {
   await api("/auth/demo/" + uid, { body: {} });
   $("#root").innerHTML = ""; // каркас перерисуется под новую роль

@@ -109,3 +109,16 @@ def sync(u=Depends(roles("adm"))):
         raise HTTPException(502,{"sync_id":jid,"error":"Синхронизация прервана; проверьте журнал"})
     run("UPDATE dynamics_sync SET status='done',finished_at=now() WHERE id=%s",jid)
     return {"id":jid,"imported":added,"skipped":skipped}
+
+from .auth import current_user
+
+@router.get("/dialog/{external_id}")
+def dialog_context(external_id:str,u=Depends(current_user)):
+    try: external_id=str(uuid.UUID(external_id))
+    except ValueError: raise HTTPException(422,"Некорректный внешний ID")
+    source=os.environ.get("DYNAMICS_URL","").rstrip("/")+"/"+os.environ.get("DYNAMICS_ENTITY","")
+    mapping=one("SELECT dialog_id FROM external_dialogs WHERE source=%s AND external_id=%s",source,external_id)
+    if not mapping: raise HTTPException(404,"Диалог не найден")
+    from .main import visible_dialog
+    visible_dialog(u,mapping["dialog_id"])
+    return {"dialog_id":mapping["dialog_id"]}
