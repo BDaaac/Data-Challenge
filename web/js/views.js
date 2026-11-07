@@ -417,3 +417,5 @@ function fmtDetails(d) {
 }
 
 export { development } from "./development.js";
+
+export { integrations } from "./integrations.js";

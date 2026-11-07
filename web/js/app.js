@@ -7,7 +7,7 @@ const NAV = {
        ["Качество", [["checklists", "Чек-листы"], ["calibration", "Калибровка модели"], ["dashboard", "Где теряем качество"]]]],
   op: [["Мои оценки", [["my", "Мои диалоги", "unread"], ["appeals", "Мои апелляции", "appeals"], ["rules", "Как меня оценивают"], ["development", "Задачи развития"]]]],
   lead: [["Группа", [["team", "Моя группа"], ["development", "Задачи развития"], ["dialogs", "Диалоги группы"], ["appeals", "Апелляции группы", "appeals"], ["violations", "Грубые ошибки", "violations"]]], ["Аналитика", [["dashboard", "Где теряем качество"]]]],
-  adm: [["Администрирование", [["users", "Пользователи"], ["settings", "Модель и оценка"], ["audit", "Журнал действий"]]], ["Данные", [["upload", "Новые диалоги"], ["dialogs", "Все диалоги"]]]]
+  adm: [["Администрирование", [["users", "Пользователи"], ["settings", "Модель и оценка"], ["integrations", "Dynamics 365"], ["audit", "Журнал действий"]]], ["Данные", [["upload", "Новые диалоги"], ["dialogs", "Все диалоги"]]]]
 };
 const HOME = { qa: "queue", op: "my", lead: "team", adm: "users" };
 const EXTRA = { qa: ["dialog", "jobs", "rules"], op: ["dialog"], lead: ["dialog", "rules"], adm: ["dialog", "jobs", "checklists"] };
@@ -15,6 +15,7 @@ const TITLES = { queue: "Очередь проверки", upload: "Новые �
   checklists: "Чек-листы", calibration: "Калибровка модели", my: "Мои диалоги", rules: "Как меня оценивают", team: "Операторы", dashboard: "Обзор качества",
   users: "Пользователи", settings: "Модель и оценка", audit: "Журнал действий", dialog: "Диалог" };
 
+const entryRoute = location.hash;
 let me = null, pop = null, poll = null, curView = null, demoUsers = [];
 let lastList = (() => { try { return sessionStorage.getItem("cqa-last") } catch { return null } })();
 const go = h => { location.hash = "#/" + h; };
@@ -87,7 +88,7 @@ async function renderLogin() {
   $$("[data-demo]").forEach(b => b.onclick = () => busy(b, async () => { await api("/auth/demo/" + b.dataset.demo, { body: {} }); await afterLogin(); }));
   if (!demo.enabled) $("#lu")?.focus();
 }
-async function afterLogin() { me = await api("/auth/me"); await loadCritNames(); lastList = null; try { sessionStorage.removeItem("cqa-last") } catch {} history.replaceState(null, "", "#/" + HOME[me.role]); route(); }
+async function afterLogin() { me = await api("/auth/me"); await loadCritNames(); lastList = null; try { sessionStorage.removeItem("cqa-last") } catch {} history.replaceState(null, "", entryRoute.startsWith("#/dialog/") ? entryRoute : "#/" + HOME[me.role]); route(); }
 async function switchRole(uid) {
   await api("/auth/demo/" + uid, { body: {} });
   $("#root").innerHTML = ""; // каркас перерисуется под новую роль

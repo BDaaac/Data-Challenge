@@ -183,3 +183,19 @@ CREATE TABLE IF NOT EXISTS development_tasks (
  reviewed_at timestamptz,
  UNIQUE(created_by, request_key)
 );
+
+CREATE TABLE IF NOT EXISTS dynamics_sync (
+ id serial PRIMARY KEY,
+ started_at timestamptz NOT NULL DEFAULT now(),
+ finished_at timestamptz,
+ status text NOT NULL DEFAULT 'running',
+ imported int NOT NULL DEFAULT 0,
+ skipped int NOT NULL DEFAULT 0,
+ error text
+);
+CREATE TABLE IF NOT EXISTS external_dialogs (
+ source text NOT NULL,
+ external_id text NOT NULL,
+ dialog_id text NOT NULL UNIQUE REFERENCES dialogs(id),
+ PRIMARY KEY(source,external_id)
+);

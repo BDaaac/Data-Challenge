@@ -46,6 +46,17 @@ class Workflows(unittest.TestCase):
         self.assertEqual(lead.post("/api/appeals/1/withdraw",json={}).status_code,403)
         self.assertEqual(lead.post("/api/appeals/1/decide",json={}).status_code,403)
 
+    def test_dynamics_import(self):
+        from app.dynamics import import_record
+        user=db.one("SELECT * FROM users WHERE role='op' LIMIT 1")
+        config=("https://example.crm.dynamics.com","fq_dialogs",{},{"external-op":user["login"]},{"external-team":user["team"]},"unused")
+        record={"id":str(uuid.uuid4()),"operator":"external-op","team":"external-team","transcript":[{"speaker":"operator","text":"Здравствуйте"}],"channel":"agent chat","language":"RU","occurred_at":"2026-01-01T00:00:00Z"}
+        self.assertTrue(import_record(record,config))
+        self.assertFalse(import_record(record,config))
+        record["transcript"][0]["text"]="Изменённый текст"
+        with self.assertRaises(ValueError): import_record(record,config)
+        self.assertEqual(db.one("SELECT count(*) n FROM external_dialogs")["n"],1)
+
     def test_development(self):
         lead,u=self.login("lead")
         d=db.one("SELECT * FROM dialogs WHERE team=%s LIMIT 1",u["team"])

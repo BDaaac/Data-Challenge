@@ -23,6 +23,8 @@ async def lifespan(_app):
 app = FastAPI(title="CQA Freedom", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 from .development import router as development_router
 app.include_router(development_router)
+from .dynamics import router as dynamics_router
+app.include_router(dynamics_router)
 WEB = ROOT / "web"
 STAFF_ALL = ("qa", "lead", "adm")
 REVIEWERS = ("qa",)
