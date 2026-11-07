@@ -217,6 +217,9 @@ def dialog(did: str, u=Depends(current_user)):
     out["history"] = all_("""SELECT e.id, e.trigger, e.total, e.created_at, e.calls, e.cost, e.model, c.version, us.name AS who
                              FROM evaluations e JOIN checklists c ON c.id=e.checklist_id LEFT JOIN users us ON us.id=e.created_by
                              WHERE dialog_id=%s ORDER BY e.id DESC""", did)
+    if u["role"] == "op":
+        published_ids={r["id"] for r in all_("SELECT id FROM evaluations WHERE dialog_id=%s AND published",did)}
+        out["history"]=[r for r in out["history"] if r["id"] in published_ids]
     if e and not (u["role"] == "op" and d["wf_status"] in ("review", "evaluating", "error", "new")):
         out["evaluation"] = eval_view(e, u)
     if u["role"] in REVIEWERS:
@@ -246,7 +249,7 @@ def eval_view(e, u=None):
 def evaluation(eid: int, u=Depends(current_user)):
     e = one("SELECT * FROM evaluations WHERE id=%s", eid) or bad("Оценка не найдена", 404)
     visible_dialog(u, e["dialog_id"])
-    if u["role"] == "op" and not e["is_current"]:
+    if u["role"] == "op" and not e["published"]:
         bad("Историческая оценка недоступна", 404)
     return eval_view(e, u)
 
@@ -432,6 +435,7 @@ def confirm(did: str, u=Depends(roles(*REVIEWERS))):
         bad("Нельзя публиковать незавершённую оценку", 409)
     if d["wf_status"] not in ("review",):
         bad("Подтверждать нечего: оценка не ждёт проверки", 409)
+    run("UPDATE evaluations SET published=true WHERE id=%s",e["id"])
     run("UPDATE dialogs SET wf_status='published' WHERE id=%s", did)
     engine.event(did, u["id"], "Оценка проверена и опубликована оператору")
     engine.audit(u["id"], "Подтвердил оценку", did, {"total": float(e["total"]) if e["total"] is not None else None})
@@ -961,6 +965,8 @@ def user_upd(uid: int, body: dict = Body(...), u=Depends(roles("adm"))):
     if uid == u["id"] and (body.get("active") is False or body.get("role", "adm") != "adm"):
         bad("Нельзя заблокировать себя или снять с себя роль администратора", 409)
     role, active, team = body.get("role", t["role"]), body.get("active", t["active"]), body.get("team", t["team"])
+    if type(active) is not bool:
+        bad("Активность должна быть логическим значением",422)
     if role not in ("qa", "op", "lead", "adm"):
         bad("Неизвестная роль", 422)
     if role == "lead" and active and not team:
@@ -984,6 +990,8 @@ def user_add(body: dict = Body(...), u=Depends(roles("adm"))):
         bad("Такой логин уже есть", 409)
     if role == "op" and one("SELECT id FROM users WHERE name=%s", name):
         bad("Имя оператора уже связано с учётной записью", 409)
+    if role == "lead" and not body.get("team"):
+        bad("Для руководителя требуется группа",422)
     pw = auth.secrets.token_urlsafe(9)
     run("INSERT INTO users(login,name,role,team,pw_hash) VALUES (%s,%s,%s,%s,%s)", lg, name, role, body.get("team") or None, auth.hash_pw(pw))
     engine.audit(u["id"], f"Добавил пользователя {name}", lg, {"role": role})

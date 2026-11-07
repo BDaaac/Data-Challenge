@@ -22,9 +22,12 @@ def task_for(u, tid):
 @router.get("")
 def listing(u=Depends(roles("op","lead"))):
     where,args=scope(u)
-    return all_(f"""SELECT t.*, o.name AS operator_name FROM development_tasks t
+    tasks=all_(f"""SELECT t.*, o.name AS operator_name FROM development_tasks t
                     JOIN dialogs d ON d.id=t.dialog_id JOIN users o ON o.id=t.operator_id
                     WHERE {where} ORDER BY t.created_at DESC""",*args)
+    for task in tasks:
+        task["history"]=all_("SELECT action,text,at FROM development_events WHERE task_id=%s ORDER BY id",task["id"])
+    return tasks
 
 @router.post("")
 @atomic_workflow
@@ -45,6 +48,7 @@ def create(body:dict=Body(...),u=Depends(roles("lead"))):
         return {"id":old["id"]}
     t=run("""INSERT INTO development_tasks(dialog_id,operator_id,created_by,request_key,instruction)
              VALUES (%s,%s,%s,%s,%s) RETURNING id""",d["id"],op["id"],u["id"],key,text)
+    run("INSERT INTO development_events(task_id,user_id,action,text) VALUES (%s,%s,'assigned',%s)",t["id"],u["id"],text)
     engine.notify("Новая задача развития",f"development/{t['id']}",user_ids=[op["id"]])
     engine.event(d["id"],u["id"],f"Назначена задача развития №{t['id']}")
     return t
@@ -58,6 +62,7 @@ def submit(tid:int,body:dict=Body(...),u=Depends(roles("op"))):
     if t["status"]=="submitted" and t["response"]==response: return {"ok":True}
     if t["status"]!="assigned": raise HTTPException(409,"Задача уже отправлена")
     run("UPDATE development_tasks SET status='submitted',response=%s,submitted_at=now() WHERE id=%s",response,tid)
+    run("INSERT INTO development_events(task_id,user_id,action,text) VALUES (%s,%s,'submitted',%s)",tid,u["id"],response)
     engine.notify("Задача развития ожидает проверки",f"development/{tid}",roles=["lead"],team=t["team"])
     return {"ok":True}
 
@@ -72,6 +77,7 @@ def review(tid:int,body:dict=Body(...),u=Depends(roles("lead"))):
     if t["status"]==status and t["feedback"]==text: return {"ok":True}
     if t["status"]!="submitted": raise HTTPException(409,"Задача не ожидает проверки")
     run("UPDATE development_tasks SET status=%s,feedback=%s,reviewed_at=now() WHERE id=%s",status,text,tid)
+    run("INSERT INTO development_events(task_id,user_id,action,text) VALUES (%s,%s,%s,%s)",tid,u["id"],status,text)
     engine.notify("Руководитель проверил задачу развития",f"development/{tid}",user_ids=[t["operator_id"]])
     engine.event(t["dialog_id"],u["id"],f"Задача развития №{tid}: "+("выполнена" if accepted else "возвращена"))
     return {"ok":True}

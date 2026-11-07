@@ -127,6 +127,7 @@ class Workflows(unittest.TestCase):
         self.assertEqual(r.status_code,200,r.text)
         self.assertEqual(engine.items_of(e["id"])[criterion["id"]]["answer"],answer)
         self.assertEqual(engine.items_of(engine.current_eval(d["id"])["id"])[criterion["id"]]["answer"],want)
+        self.assertEqual(op.get("/api/evaluations/"+str(e["id"])).status_code,200)
         self.assertEqual(op.post("/api/dialogs/"+d["id"]+"/acknowledge").status_code,200)
 
 try:

@@ -202,3 +202,20 @@ CREATE TABLE IF NOT EXISTS external_dialogs (
 
 CREATE UNIQUE INDEX IF NOT EXISTS one_current_evaluation ON evaluations(dialog_id) WHERE is_current;
 CREATE UNIQUE INDEX IF NOT EXISTS one_open_appeal ON appeals(dialog_id) WHERE status='open';
+
+ALTER TABLE evaluations ADD COLUMN IF NOT EXISTS published boolean NOT NULL DEFAULT false;
+-- Only known visible versions are backfilled; unpublished historical drafts remain private.
+UPDATE evaluations e SET published=true
+WHERE NOT published AND (
+ (is_current AND EXISTS (SELECT 1 FROM dialogs d WHERE d.id=e.dialog_id AND d.wf_status IN ('published','acknowledged','revised','appeal')))
+ OR EXISTS (SELECT 1 FROM appeals ap WHERE ap.eval_id=e.id)
+);
+
+CREATE TABLE IF NOT EXISTS development_events (
+ id serial PRIMARY KEY,
+ task_id int NOT NULL REFERENCES development_tasks(id),
+ user_id int NOT NULL REFERENCES users(id),
+ action text NOT NULL,
+ text text NOT NULL,
+ at timestamptz NOT NULL DEFAULT now()
+);

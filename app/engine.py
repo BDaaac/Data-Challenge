@@ -274,6 +274,8 @@ def after_evaluation(eval_id):
         wf = prev if prev != "evaluating" else "published"
         if ev["critical"] and ev["calls"] and prev in ("published", "acknowledged", "revised"):  # новый ответ модели — ещё раз человеку
             wf = "review"
+    if wf in ("published","acknowledged","revised","appeal"):
+        run("UPDATE evaluations SET published=true WHERE id=%s",eval_id)
     run("UPDATE dialogs SET wf_status=%s WHERE id=%s", wf, d["id"])
     cl = checklist(ev["checklist_id"])
     total = "—" if ev["total"] is None else f"{float(ev['total']):.2f}".replace(".", ",")
@@ -417,6 +419,8 @@ def override(dialog_id, crit_id, answer, reason, user_id, source="qa"):
     run("""UPDATE eval_items SET answer=%s, source=%s, override_by=%s, override_reason=%s, override_at=now(), status='ok'
            WHERE eval_id=%s AND crit_id=%s""", answer, source, user_id, reason, eid, crit_id)
     finalize(eid)
+    if base["published"]:
+        run("UPDATE evaluations SET published=true WHERE id=%s",eid)
     with tx() as c:
         c.execute("UPDATE evaluations SET is_current=false WHERE dialog_id=%s", (dialog_id,))
         c.execute("UPDATE evaluations SET is_current=true WHERE id=%s", (eid,))
