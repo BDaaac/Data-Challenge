@@ -139,7 +139,7 @@ def vis(u, alias="d"):
 def visible_dialog(u, did):
     w, a = vis(u)
     d = one(f"SELECT d.* FROM dialogs d WHERE d.id=%s AND {w}", did, *a)
-    if not d:
+    if not d or (u["role"] == "op" and d["wf_status"] not in ("published", "acknowledged", "revised", "appeal")):
         bad("Диалог не найден или недоступен для вашей роли", 404)
     return d
 
@@ -236,6 +236,8 @@ def eval_view(e, u=None):
 def evaluation(eid: int, u=Depends(current_user)):
     e = one("SELECT * FROM evaluations WHERE id=%s", eid) or bad("Оценка не найдена", 404)
     visible_dialog(u, e["dialog_id"])
+    if u["role"] == "op" and not e["is_current"]:
+        bad("Историческая оценка недоступна", 404)
     return eval_view(e, u)
 
 
@@ -488,12 +490,16 @@ def decide(aid: int, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
     if ap["status"] != "open":
         bad("Апелляция уже рассмотрена", 409)
     dec, comment = body.get("decisions") or {}, str(body.get("comment", "")).strip()
+    if not isinstance(dec, dict) or any(type(v) is not bool for v in dec.values()):
+        bad("Решения должны быть логическими значениями", 422)
     if any(it["crit"] not in dec for it in ap["items"]):
         bad("Примите решение по каждому критерию", 422)
     if len(comment) < 5:
         bad("Добавьте комментарий: оператор увидит его вместе с решением", 422)
     d = one("SELECT * FROM dialogs WHERE id=%s", ap["dialog_id"])
     cur = engine.current_eval(d["id"])
+    if not cur or cur["id"] != ap["eval_id"]:
+        bad("Оценка изменилась после подачи апелляции; требуется повторная проверка QA", 409)
     cl = {c["id"]: c for c in engine.checklist(cur["checklist_id"])["criteria"]}
     before = cur["total"]
     accepted = [it for it in ap["items"] if dec[it["crit"]] and it["crit"] in cl]
@@ -514,7 +520,7 @@ def decide(aid: int, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
 
 
 @app.post("/api/appeals/{aid}/withdraw")
-def withdraw(aid: int, body: dict = Body(...), u=Depends(roles("lead", "op"))):
+def withdraw(aid: int, body: dict = Body(...), u=Depends(roles("op"))):
     ap = one("SELECT * FROM appeals WHERE id=%s", aid) or bad("Апелляция не найдена", 404)
     d = visible_dialog(u, ap["dialog_id"])
     if ap["status"] != "open":
