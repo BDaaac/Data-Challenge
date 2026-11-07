@@ -160,3 +160,23 @@ CREATE TABLE IF NOT EXISTS settings (
   key   text PRIMARY KEY,
   value jsonb NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS coaching_plans (
+  id serial PRIMARY KEY,
+  team text NOT NULL,
+  operator text,
+  dialog_id text REFERENCES dialogs(id),
+  kind text NOT NULL CHECK (kind IN ('plan','task','feedback')),
+  title text NOT NULL,
+  note text NOT NULL DEFAULT '',
+  due date,
+  status text NOT NULL DEFAULT 'planned' CHECK (status IN ('planned','work','done')),
+  created_by int NOT NULL REFERENCES users(id),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS coaching_plans_team ON coaching_plans(team, created_at);
+ALTER TABLE coaching_plans ADD COLUMN IF NOT EXISTS criterion text;
+ALTER TABLE coaching_plans ADD COLUMN IF NOT EXISTS criterion_name text;
+ALTER TABLE coaching_plans ADD COLUMN IF NOT EXISTS expected_result text NOT NULL DEFAULT '';
+ALTER TABLE coaching_plans ADD COLUMN IF NOT EXISTS priority text NOT NULL DEFAULT 'medium' CHECK (priority IN ('low','medium','high'));

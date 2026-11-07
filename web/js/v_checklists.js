@@ -1,21 +1,25 @@
-// Чек-листы: версии, редактор черновика, разница с активной версией, пробный прогон, публикация и применение. Плюс «Как меня оценивают».
-import { $, $$, api, esc, fmt, money, dt, toast, fail, busy, pill, ansPill, ansLabel, linkify, emptyBox, plural, SECS } from "./ui.js";
+// Чек-листы: версии, редактор черновика, разница с активной версией, пробный прогон, публикация и применение. Плюс «Стандарты оценки».
+import { $, $$, api, esc, fmt, money, dt, toast, fail, busy, pill, ansPill, ansLabel, emptyBox, plural, SECS } from "./ui.js";
 
-const TYPE = { binary: "Да / Нет", scale: "Шкала", flag: "Флаг грубой ошибки" };
+const TYPE = { binary: "Да / Нет", scale: "Шкала", flag: "Флаг риска" };
 const ST = { draft: ["warn", "Черновик"], published: ["ok", "Активна"], archived: ["na", "Архив"] };
-const KIND = { added: "Новый критерий — модель оценит его во всех диалогах", removed: "Удалён — его баллы уйдут из итога", weight: "Вес — пересчёт без модели", semantic: "Изменён смысл — модель переоценит только этот критерий", section: "Перенесён в другой раздел" };
+const KIND = { added: "Новый критерий — модель оценит его во всех диалогах", removed: "Удалён — его баллы уйдут из итога", weight: "Вес — пересчёт без вызова модели", semantic: "Изменён смысл — модель переоценит только этот критерий", section: "Перенесён в другой раздел" };
 const FIELD = { name: "название", rule: "правило", answers: "варианты ответа", type: "тип", na_allowed: "N/A", code: "код" };
 
 export async function checklists(el, ctx) {
   if (ctx.arg) return editor(el, ctx);
   const list = await api("/checklists");
   if (!ctx.alive()) return;
-  const R = ctx.me.role, can = ["head", "qa"].includes(R), draft = list.find(c => c.status === "draft");
-  el.innerHTML = `<div class="ph"><div><h1>Чек-листы</h1><p>Критерии, веса и правила, по которым модель оценивает диалоги. Активная версия одна; изменения готовятся в черновике, проверяются пробным прогоном и публикуются руководителем QA. Каждая оценка помнит, по какой версии сделана.</p></div>
-    ${can ? `<div class="acts">${draft ? `<a class="btn pri" href="#/checklists/${draft.id}">Продолжить черновик v${draft.version}</a>` : `<button class="btn pri" id="nd">Изменить чек-лист</button>`}</div>` : ""}</div>
-    <div class="tw"><table class="t"><thead><tr><th>Версия</th><th>Название</th><th class="r">Критериев</th><th>Статус</th><th>Создал</th><th>Опубликовал</th><th>Комментарий</th></tr></thead><tbody>
-    ${list.map(c => `<tr class="go" data-cl="${c.id}"><td class="id">v${c.version}</td><td>${esc(c.name)}</td><td class="r num">${c.n}</td><td>${pill(...ST[c.status])}</td><td>${esc(c.created_name || "импорт")}<span class="sub">${dt(c.created_at)}</span></td>
-      <td>${c.published_name ? esc(c.published_name) + `<span class="sub">${dt(c.published_at)}</span>` : '<span class="muted">—</span>'}</td><td class="sm muted wrap">${esc(c.note || "")}</td></tr>`).join("")}</tbody></table></div>`;
+  const R = ctx.me.role, can = ["qa"].includes(R), draft = list.find(c => c.status === "draft");
+  const active = ["qa"].includes(R) && list.find(c => c.status === "published");
+  const current = active ? await api("/checklists/" + active.id) : null;
+  if (!ctx.alive()) return;
+  el.innerHTML = `<div class="ph"><div><h1>Чек-листы</h1></div>
+    ${can ? `<div class="acts">${draft ? `<a class="btn pri" href="#/checklists/${draft.id}">Открыть черновик v${draft.version}</a>` : `<button class="btn pri" id="nd">Создать черновик</button>`}</div>` : ""}</div>
+    ${current ? `<div class="qa-checklist-label"><span><b>${esc(current.name)}</b></span><a href="#/checklists/${current.id}">v${current.version} · действующая</a></div><div class="tw"><table class="t"><thead><tr><th>№</th><th>Критерий</th><th class="r">Вес, %</th></tr></thead><tbody>${current.criteria.map((x,i)=>`<tr><td>${String(i+1).padStart(2,"0")}</td><td><a href="#/checklists/${current.id}" aria-label="Посмотреть правило: ${esc(x.name)}">${esc(x.name)}</a></td><td class="r">${x.type === "flag" ? "Контроль риска" : fmt(x.weight)}</td></tr>`).join("")}</tbody></table></div><div class="qa-checklist-label"><span>Суммарный вес: ${fmt(current.criteria.filter(x=>x.type!=="flag").reduce((a,x)=>a+Number(x.weight),0))}%</span></div><h2 class="sec-hd">Версии чек-листа</h2>` : ""}
+    <div class="tw"><table class="t"><thead><tr><th>Версия</th><th>Название</th><th class="r">Критериев</th><th>Статус</th><th>Автор</th><th>Опубликован</th><th>Комментарий</th></tr></thead><tbody>
+    ${list.map(c => `<tr class="go" data-cl="${c.id}"><td class="id">v${c.version}</td><td><b>${esc(c.name)}</b></td><td class="r num">${c.n}</td><td>${pill(...ST[c.status])}</td><td>${esc(c.created_name || "система")}<span class="sub">${dt(c.created_at)}</span></td>
+      <td>${c.published_name ? esc(c.published_name) + `<span class="sub">${dt(c.published_at)}</span>` : '<span class="muted">—</span>'}</td><td class="sm muted wrap">${esc(c.note || "—")}</td></tr>`).join("")}</tbody></table></div>`;
   $$("[data-cl]", el).forEach(r => r.onclick = () => ctx.go("checklists/" + r.dataset.cl));
   const nd = $("#nd", el);
   if (nd) nd.onclick = () => busy(nd, async () => { const r = await api("/checklists/draft", { body: {} }); ctx.go("checklists/" + r.id); });
@@ -26,7 +30,7 @@ async function editor(el, ctx) {
   const id = +ctx.arg;
   const c = await api("/checklists/" + id);
   if (!ctx.alive()) return;
-  const R = ctx.me.role, isDraft = c.status === "draft", can = isDraft && ["head", "qa"].includes(R);
+  const R = ctx.me.role, isDraft = c.status === "draft", can = isDraft && ["qa"].includes(R);
   const st = ED[id] || (ED[id] = { crit: structuredClone(c.criteria), dirty: false, open: null, note: c.note || "", trial: null, tsel: new Set(c.diff?.model_crits?.slice(0, 4) || []) });
   if (!st.dirty) st.crit = structuredClone(c.criteria);
   const draw = (srv = c) => {
@@ -34,56 +38,64 @@ async function editor(el, ctx) {
     const df = srv.diff;
     let last = -1;
     const rows = st.crit.map((x, i) => {
-      const head = ""; // разделы убраны из вида: плоский список проще читать и менять
+      const secIdx = x.type === "flag" ? 3 : (x.sec ?? 2);
+      const head = secIdx !== last ? `<div class="ox-sec"><span>${esc(SECS[secIdx] || "")}</span><span class="ox-sg">${secIdx === 3 ? "Контроль рисков · без веса" : `Сумма секции: ${st.crit.filter(k => (k.type === "flag" ? 3 : (k.sec ?? 2)) === secIdx && k.type !== "flag").reduce((a, b) => a + (+b.weight || 0), 0)} б.`}</span></div>` : "";
+      last = secIdx;
       const ch = df?.changes.filter(d => d.crit === x.id) || [];
       const open = st.open === x.id;
-      return head + `<div class="panel" style="padding:12px 16px;margin-top:0;margin-bottom:8px">
-        <div class="row"><span class="num muted" style="width:22px">${x.id.slice(1)}</span><b style="font-weight:500" class="grow">${esc(x.name || "Новый критерий")}</b>
-          ${ch.map(d => pill(d.kind === "weight" ? "info" : d.kind === "removed" ? "bad" : "warn", { added: "новый", weight: `вес ${d.before} → ${d.after}`, semantic: "смысл изменён", section: "раздел" }[d.kind] || d.kind)).join("")}
+      return head + `<div class="cl-item ${open ? "open" : ""}">
+        <div class="cl-row">
+          <span class="num muted" style="width:24px">${String(x.id.slice(1)).padStart(2, "0")}</span>
+          <b class="grow" style="font-weight:500;cursor:pointer" data-open="${x.id}">${esc(x.name || "Новый критерий")}</b>
+          ${ch.map(d => pill(d.kind === "weight" ? "info" : d.kind === "removed" ? "bad" : "warn", { added: "новый", weight: `вес ${d.before}  —  ${d.after}`, semantic: "правило изм.", section: "раздел" }[d.kind] || d.kind)).join("")}
           <span class="sm muted">${TYPE[x.type]}</span>
-          ${x.type !== "flag" ? (can ? `<label class="sm muted" style="display:flex;gap:6px;align-items:center">вес <input class="f" type="number" min="1" max="100" data-w="${i}" value="${x.weight}" style="width:64px;height:30px;padding:0 6px" aria-label="Вес критерия ${x.id.slice(1)}"></label>` : `<span class="num">вес ${x.weight}</span>`) : `<span class="sm muted">без баллов</span>`}
-          <button class="btn sm" data-open="${x.id}" aria-expanded="${open}">${open ? "Свернуть" : can ? "Правило" : "Подробнее"}</button></div>
-        ${open ? `<div style="margin-top:10px">${can ? `<div class="cols" style="grid-template-columns:2fr 1fr;gap:12px">
-            <div><label class="l" for="n${i}">Название</label><input class="f" id="n${i}" data-f="name" data-i="${i}" value="${esc(x.name)}"></div>
-            <div><label class="l" for="t${i}">Тип ответа</label><select class="f" id="t${i}" data-f="type" data-i="${i}">${Object.entries(TYPE).map(([k, v]) => `<option value="${k}" ${x.type === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div>
-            <details style="margin-top:10px"${x.code ? "" : " open"}><summary class="sm muted" style="cursor:pointer">Дополнительно: код критерия в файле результатов${x.code ? ` · ${esc(x.code)}` : " — заполните"}</summary>
-              <div class="cols" style="grid-template-columns:1fr 1fr;gap:12px"><div><label class="l" for="k${i}">Код (латиница, уникальный)</label><input class="f" id="k${i}" data-f="code" data-i="${i}" value="${esc(x.code)}" placeholder="greeting"></div>
-              <div><label class="l" for="s${i}">Раздел отчёта</label><select class="f" id="s${i}" data-f="sec" data-i="${i}">${SECS.map((v, k) => `<option value="${k}" ${x.sec === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div></details>
-            ${x.type === "scale" ? `<label class="l" for="a${i}">Ступени шкалы через запятую</label><input class="f" id="a${i}" data-f="answers" data-i="${i}" value="${x.answers.filter(a => /^\d+$/.test(a)).join(", ")}" style="max-width:240px">` : ""}
-            ${x.type !== "flag" ? `<label class="chk" style="margin-top:12px"><input type="checkbox" data-f="na_allowed" data-i="${i}" ${x.na_allowed ? "checked" : ""}> Допускается N/A — критерий может быть неприменим, его вес перераспределится</label>` : ""}
-            <label class="l" for="r${i}">Правило для модели и для оператора</label><textarea class="f" id="r${i}" data-f="rule" data-i="${i}" rows="5" placeholder="Когда Да, когда Нет, когда N/A. Модель видит ровно этот текст">${esc(x.rule)}</textarea>
-            ${x.conditions ? `<p class="sm muted" style="margin-top:6px">У критерия есть дерево условий (${Object.keys(x.conditions).length} вопроса модели, ответ выводит код). Оно сохраняется, пока правило не переписано.</p>` : ""}
+          ${x.type !== "flag" ? (can ? `<label class="sm muted" style="display:inline-flex;gap:6px;align-items:center">Вес <input class="f sm mono" type="number" min="1" max="100" data-w="${i}" value="${x.weight}" style="width:58px;text-align:right" aria-label="Вес критерия ${x.id.slice(1)}"></label>` : `<span class="num sm">вес ${x.weight}</span>`) : `<span class="sm muted">флаг</span>`}
+          <button class="btn sm" data-open="${x.id}" aria-expanded="${open}">${open ? "Свернуть" : can ? "Изменить" : "Правило"}</button>
+        </div>
+        ${!open ? `<div class="cl-preview muted sm">${esc((x.rule || "").slice(0, 140))}${(x.rule || "").length > 140 ? "…" : ""}</div>` : ""}
+        ${open ? `<div class="cl-body">${can ? `<div class="cols" style="grid-template-columns:2fr 1fr;gap:12px;border:0;padding:0">
+            <div><label class="l" for="n${i}" style="margin-top:0">Название критерия</label><input class="f" id="n${i}" data-f="name" data-i="${i}" value="${esc(x.name)}"></div>
+            <div><label class="l" for="t${i}" style="margin-top:0">Тип ответа</label><select class="f" id="t${i}" data-f="type" data-i="${i}">${Object.entries(TYPE).map(([k, v]) => `<option value="${k}" ${x.type === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div>
+            <div class="cols" style="grid-template-columns:1fr 1fr;gap:12px;border:0;padding:0;margin-top:8px">
+              <div><label class="l" for="k${i}" style="margin-top:0">Код экспорта (латиница)</label><input class="f mono" id="k${i}" data-f="code" data-i="${i}" value="${esc(x.code)}" placeholder="greeting"></div>
+              <div><label class="l" for="s${i}" style="margin-top:0">Секция чек-листа</label><select class="f" id="s${i}" data-f="sec" data-i="${i}">${SECS.map((v, k) => `<option value="${k}" ${x.sec === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>
+            </div>
+            ${x.type === "scale" ? `<label class="l" for="a${i}">Ступени шкалы через запятую</label><input class="f mono" id="a${i}" data-f="answers" data-i="${i}" value="${x.answers.filter(a => /^\d+$/.test(a)).join(", ")}" style="max-width:220px">` : ""}
+            ${x.type !== "flag" ? `<label class="chk" style="margin-top:10px"><input type="checkbox" data-f="na_allowed" data-i="${i}" ${x.na_allowed ? "checked" : ""}> Разрешить N/A (неприменимый вес перераспределяется пропорционально)</label>` : ""}
+            <label class="l" for="r${i}">Правило оценки и условия применения</label><textarea class="f" id="r${i}" data-f="rule" data-i="${i}" rows="4" placeholder="Чёткое условие для Да / Нет / N/A">${esc(x.rule)}</textarea>
             <div class="row" style="margin-top:10px"><span class="grow"></span><button class="btn sm danger" data-del="${i}">Удалить критерий</button></div>`
-          : `<p class="fg2" style="max-width:80ch">${esc(x.rule)}</p><div class="kv sm" style="margin-top:8px"><span>Ответы</span><b>${x.answers.filter(a => a !== "na").map(a => ansLabel(x, a)).join(" · ")}</b>${x.type !== "flag" ? `<span>N/A</span><b>${x.na_allowed ? "допускается — вес перераспределится" : "нет"}</b>` : ""}</div>`}
-          ${ch.filter(d => d.kind === "semantic").map(d => `<div class="diff" style="margin-top:10px">${d.fields.map(f => `<div class="w"><b>${FIELD[f] || f}</b></div><div class="m">− ${esc(fmtV(d.before[f]))}</div><div class="p">+ ${esc(fmtV(d.after[f]))}</div>`).join("")}</div>`).join("")}
+          : `<p class="fg2 sm" style="line-height:1.55">${esc(x.rule)}</p><div class="sm muted" style="margin-top:6px">Допустимые ответы: <b>${x.answers.filter(a => a !== "na").map(a => ansLabel(x, a)).join(" · ")}</b>${x.type !== "flag" ? ` · N/A: <b>${x.na_allowed ? "разрешён (вес перераспределяется)" : "нет"}</b>` : ""}</div>`}
+          ${ch.filter(d => d.kind === "semantic").map(d => `<div class="diff" style="margin-top:10px">${d.fields.map(f => `<div class="w"><b>Изменено поле: ${FIELD[f] || f}</b></div><div class="m">− ${esc(fmtV(d.before[f]))}</div><div class="p">+ ${esc(fmtV(d.after[f]))}</div>`).join("")}</div>`).join("")}
         </div>` : ""}</div>`;
     }).join("");
     const errs = srv.errors || [];
-    el.innerHTML = `<div class="ph"><div><h1>«${esc(c.name)}» v${c.version} ${pill(...ST[c.status])}</h1><p>${isDraft ? `Черновик на основе активной v${df?.base_version}. Модель и операторы его не видят, пока руководитель QA не опубликует.` : c.status === "published" ? `Активная версия. Опубликована ${dt(c.published_at)}${c.published_by ? "" : ""}. Изменения — через черновик.` : "Архивная версия: по ней сделаны старые оценки, они хранятся с этой версией."}</p></div>
-      <div class="acts">${c.status === "published" && ["head", "qa"].includes(R) && c.stale ? `<button class="btn" id="apply">Применить к старым оценкам (${c.stale})</button>` : ""}${can ? `<button class="btn danger" id="drop">Удалить черновик</button>` : ""}</div></div>
-      <div class="cols ww"><div>
-        ${can ? `<div class="row" style="margin-bottom:4px"><span class="${sum === 100 ? "fg2" : ""}" style="${sum === 100 ? "" : "color:var(--bad);font-weight:500"}">Сумма весов: <b class="num">${sum}</b> из 100</span><span class="grow"></span><button class="btn sm" id="addc">Добавить критерий</button>${st.dirty ? `<button class="btn pri sm" id="save">Сохранить изменения</button>` : `<span class="sm muted">Сохранено</span>`}</div>` : ""}
-        ${rows}</div>
-      <div style="position:sticky;top:0;align-self:start">
-        ${isDraft ? `<div class="panel"><h3>Что изменится</h3>${st.dirty ? `<p class="note warn" style="margin-top:8px">Есть несохранённые правки — сохраните, чтобы увидеть точную разницу.</p>` : ""}
-          ${df && df.changes.length ? `<ul style="margin:10px 0 0;padding-left:18px;display:grid;gap:6px" class="sm">${df.changes.map(d => `<li><b>${d.crit.slice(1)}. ${esc(d.name)}</b> — ${KIND[d.kind]}${d.kind === "weight" ? `: ${d.before} → ${d.after}` : ""}${d.kind === "semantic" ? ` (${d.fields.map(f => FIELD[f] || f).join(", ")})` : ""}</li>`).join("")}</ul>
-            <div class="box" style="margin-top:12px"><div class="h">Стоимость применения к ${df.dialogs} оценённым диалогам</div><div class="sm">${df.model_crits.length ? `Модель вызовется только для критериев ${df.model_crits.map(x => x.slice(1)).join(", ")}: ${df.calls} ${plural(df.calls, "запрос", "запроса", "запросов")}, около ${money(df.cost, 2)}. Остальные ответы переиспользуются.` : "Ни одного вызова модели: меняются только веса, итоги пересчитаются мгновенно."}</div></div>`
-            : `<p class="sm muted" style="margin-top:8px">Пока черновик совпадает с активной версией. Поменяйте вес, правило или добавьте критерий.</p>`}
-          ${errs.length ? `<div class="note bad" style="margin-top:12px"><b>Перед публикацией исправьте:</b><ul style="margin:6px 0 0;padding-left:18px">${errs.map(e => `<li>${esc(e)}</li>`).join("")}</ul></div>` : ""}
-        </div>` : ""}
-        ${can && df?.model_crits.length ? `<div class="panel"><h3>Пробный прогон</h3><p class="sm muted" style="margin-top:4px">Изменённые критерии на 3 случайных оценённых диалогах — до 12 запросов, около $0,03. В оценки не сохраняется.</p>
-          <div class="chips" style="margin-top:10px">${df.model_crits.map(x => `<label class="chk sm"><input type="checkbox" data-ts="${x}" ${st.tsel.has(x) ? "checked" : ""}> ${x.slice(1)}</label>`).join("")}</div>
-          <div class="row" style="margin-top:10px"><button class="btn" id="trial" ${st.tsel.size && st.tsel.size <= 4 && !st.dirty ? "" : "disabled"}>Проверить на диалогах</button>${st.tsel.size > 4 ? `<span class="sm" style="color:var(--bad)">не больше 4 критериев</span>` : ""}</div>
-          ${st.trial ? trialTable(st.trial, st.crit) : ""}</div>` : ""}
-        ${isDraft ? `<div class="panel"><label class="l" for="note" style="margin-top:0">Комментарий к версии</label><textarea class="f" id="note" rows="2" placeholder="Например: уточнили правило решения вопроса" ${can ? "" : "disabled"}>${esc(st.note)}</textarea>
-          ${R === "head" ? `<button class="btn pri" id="pub" style="margin-top:12px" ${errs.length || st.dirty || !df?.changes.length ? "disabled" : ""}>Опубликовать v${c.version}</button><p class="sm muted" style="margin-top:6px">После публикации новые диалоги оцениваются по v${c.version}. Старые оценки остаются по своей версии, пока вы их не примените.</p>`
-            : `<p class="sm muted" style="margin-top:10px">Публикует руководитель QA. Сохраните черновик — он увидит его в списке версий.</p>`}</div>` : ""}
-      </div></div>`;
+    el.innerHTML = `<div class="ph"><div><h1>«${esc(c.name)}» · v${c.version} ${pill(...ST[c.status])}</h1><p>${isDraft ? `Черновик на базе активной v${df?.base_version}. Изменения вступят в силу после публикации.` : c.status === "published" ? `Новые оценки используют эту версию. ${c.stale ? `У ${c.stale} диалогов осталась прежняя версия — нажмите «Пересчитать старые диалоги», чтобы обновить их.` : "Сохранённые оценки актуальны."}` : "Архивная версия стандарта."}</p></div>
+      <div class="acts">${c.status === "published" && ["qa"].includes(R) && c.stale ? `<button class="btn" id="apply">Пересчитать старые диалоги (${c.stale})</button>` : ""}${can ? `<button class="btn danger" id="drop">Удалить черновик</button>` : ""}</div></div>
+      <div class="cols ww flush-cols">
+        <div class="col-pane" style="padding:0">
+          ${can ? `<div class="cl-toolbar"><span class="${sum === 100 ? "fg2" : ""}" style="${sum === 100 ? "" : "color:var(--bad);font-weight:600"}">Сумма весов (п.1–7): <b class="num">${sum}</b> / 100</span><div class="acts"><button class="btn sm" id="addc">Добавить критерий</button>${st.dirty ? `<button class="btn pri sm" id="save">Сохранить черновик</button>` : `<span class="sm muted">Сохранено</span>`}</div></div>` : ""}
+          <div class="cl-list">${rows}</div>
+        </div>
+        <div class="col-pane">
+          ${isDraft ? `<div class="sec"><h2>Что изменится</h2>${st.dirty ? `<p class="note warn" style="margin-top:8px">Сохраните черновик для расчёта стоимости переоценки.</p>` : ""}
+            ${df && df.changes.length ? `<ul style="margin:8px 0 0;padding-left:18px;display:grid;gap:6px" class="sm">${df.changes.map(d => `<li><b>#${d.crit.slice(1)} ${esc(d.name)}</b> — ${KIND[d.kind]}${d.kind === "weight" ? ` (${d.before}  —  ${d.after})` : ""}${d.kind === "semantic" ? ` (${d.fields.map(f => FIELD[f] || f).join(", ")})` : ""}</li>`).join("")}</ul>
+              <div class="box" style="margin-top:12px"><div class="h">Оценка влияния на ${df.dialogs} диалогов</div><div class="sm">${df.model_crits.length ? `Переоценка ИИ потребуется только для п.${df.model_crits.map(x => x.slice(1)).join(", ")}: <b>${df.calls} ${plural(df.calls, "запрос", "запроса", "запросов")} (${money(df.cost, 2)})</b>. Остальные критерии переиспользуются из кеша.` : "<b>0 вызовов LLM ($0,00)</b> — меняются только веса, все оценки пересчитаются мгновенно."}</div></div>`
+              : `<p class="sm muted" style="margin-top:6px">Отличий от активной версии пока нет.</p>`}
+            ${errs.length ? `<div class="note bad" style="margin-top:12px"><b>Исправьте ошибки перед публикацией:</b><ul style="margin:4px 0 0;padding-left:18px">${errs.map(e => `<li>${esc(e)}</li>`).join("")}</ul></div>` : ""}
+          </div>` : `<div class="sec"><h2>О версии v${c.version}</h2><p class="sm fg2">Комментарий: ${esc(c.note || "Без комментария")}</p></div>`}
+          ${can && df?.model_crits.length ? `<div class="sec" style="border-top:1px solid var(--line);padding-top:16px"><h2>Тестовый прогон (Dry Run)</h2><p class="sm muted">Проверка изменённых правил на 3 случайных диалогах перед публикацией (~$0,03).</p>
+            <div class="chips" style="margin-top:8px">${df.model_crits.map(x => `<label class="chk sm"><input type="checkbox" data-ts="${x}" ${st.tsel.has(x) ? "checked" : ""}> Критерий #${x.slice(1)}</label>`).join("")}</div>
+            <div class="row" style="margin-top:10px"><button class="btn sm" id="trial" ${st.tsel.size && st.tsel.size <= 4 && !st.dirty ? "" : "disabled"}>Запустить тест на 3 диалогах</button>${st.tsel.size > 4 ? `<span class="sm" style="color:var(--bad)">Максимум 4 критерия</span>` : ""}</div>
+            ${st.trial ? trialTable(st.trial, st.crit) : ""}</div>` : ""}
+          ${isDraft ? `<div class="sec" style="border-top:1px solid var(--line);padding-top:16px"><label class="l" for="note" style="margin-top:0">Комментарий к релизу</label><textarea class="f sm" id="note" rows="2" placeholder="Причина изменения весов или правил…" ${can ? "" : "disabled"}>${esc(st.note)}</textarea>
+            ${R === "qa" ? `<button class="btn pri" id="pub" style="margin-top:10px;width:100%;justify-content:center" ${errs.length || st.dirty || !df?.changes.length ? "disabled" : ""}>Опубликовать стандарт v${c.version}</button>`
+              : `<p class="sm muted" style="margin-top:8px">Опубликовать черновик может QA-специалист.</p>`}</div>` : ""}
+        </div>
+      </div>`;
     bind(srv);
   };
   const bind = srv => {
     $$("[data-open]", el).forEach(b => b.onclick = () => { st.open = st.open === b.dataset.open ? null : b.dataset.open; draw(srv); });
-    const mark = () => { if (!st.dirty) { st.dirty = true; draw(srv); } };
     $$("[data-w]", el).forEach(inp => inp.oninput = () => { st.crit[+inp.dataset.w].weight = +inp.value || 0; const keep = document.activeElement === inp; const pos = inp.selectionStart; st.dirty = true; draw(srv); if (keep) { const n = $(`[data-w="${inp.dataset.w}"]`, el); n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } });
     $$("[data-f]", el).forEach(inp => {
       const i = +inp.dataset.i, f = inp.dataset.f, x = st.crit[i];
@@ -98,7 +110,7 @@ async function editor(el, ctx) {
         if (!st.dirty) { st.dirty = true; const id_ = inp.id, pos = inp.selectionStart; draw(srv); const n = $("#" + id_, el); n?.focus(); try { n.setSelectionRange(pos, pos); } catch {} }
       };
     });
-    $$("[data-del]", el).forEach(b => b.onclick = () => { const x = st.crit[+b.dataset.del]; st.crit.splice(+b.dataset.del, 1); st.dirty = true; st.open = null; toast(`Критерий «${x.name}» убран из черновика. Сохраните, чтобы применить`); draw(srv); });
+    $$("[data-del]", el).forEach(b => b.onclick = () => { const x = st.crit[+b.dataset.del]; st.crit.splice(+b.dataset.del, 1); st.dirty = true; st.open = null; toast(`Критерий «${x.name}» удалён из черновика`); draw(srv); });
     const add = $("#addc", el);
     if (add) add.onclick = () => {
       const n = Math.max(...st.crit.map(x => +x.id.slice(1))) + 1, fl = st.crit.findIndex(x => x.type === "flag");
@@ -107,7 +119,7 @@ async function editor(el, ctx) {
       st.open = nc.id; st.dirty = true; draw(srv); $(`#n${st.crit.indexOf(nc)}`, el)?.focus();
     };
     const sv = $("#save", el);
-    if (sv) sv.onclick = () => busy(sv, async () => { const r = await api("/checklists/" + id, { method: "PUT", body: { criteria: st.crit, note: st.note } }); st.crit = structuredClone(r.criteria); st.dirty = false; st.trial = null; st.tsel = new Set((r.diff?.model_crits || []).slice(0, 4)); toast(r.errors.length ? "Сохранено. Есть что исправить перед публикацией" : "Черновик сохранён"); draw(r); });
+    if (sv) sv.onclick = () => busy(sv, async () => { const r = await api("/checklists/" + id, { method: "PUT", body: { criteria: st.crit, note: st.note } }); st.crit = structuredClone(r.criteria); st.dirty = false; st.trial = null; st.tsel = new Set((r.diff?.model_crits || []).slice(0, 4)); toast(r.errors.length ? "Сохранено с предупреждениями" : "Черновик сохранён"); draw(r); });
     const nt = $("#note", el); if (nt) nt.oninput = () => { st.note = nt.value; };
     $$("[data-ts]", el).forEach(cb => cb.onchange = () => { cb.checked ? st.tsel.add(cb.dataset.ts) : st.tsel.delete(cb.dataset.ts); draw(srv); });
     const tr = $("#trial", el);
@@ -115,14 +127,14 @@ async function editor(el, ctx) {
     const pub = $("#pub", el);
     if (pub) pub.onclick = () => busy(pub, async () => {
       await api(`/checklists/${id}/publish`, { body: { note: st.note } });
-      delete ED[id]; toast(`v${c.version} опубликована. Новые диалоги оцениваются по ней`); ctx.refresh(); await editor(el, ctx);
+      delete ED[id]; toast(`Стандарт v${c.version} опубликован`); ctx.refresh(); await editor(el, ctx);
     });
     const ap = $("#apply", el);
     if (ap) ap.onclick = () => busy(ap, async () => { const r = await api(`/checklists/${id}/apply`, { body: {} }); ctx.go("jobs/" + r.job.id); });
     const dr = $("#drop", el);
     if (dr) dr.onclick = () => {
       if (dr.dataset.sure) return busy(dr, async () => { await api("/checklists/" + id, { method: "DELETE" }); delete ED[id]; toast("Черновик удалён"); ctx.go("checklists"); });
-      dr.dataset.sure = "1"; dr.textContent = "Точно удалить? Нажмите ещё раз"; setTimeout(() => { if (dr.isConnected) { delete dr.dataset.sure; dr.textContent = "Удалить черновик"; } }, 4000);
+      dr.dataset.sure = "1"; dr.textContent = "Подтвердить удаление?"; setTimeout(() => { if (dr.isConnected) { delete dr.dataset.sure; dr.textContent = "Удалить черновик"; } }, 4000);
     };
   };
   draw();
@@ -135,12 +147,12 @@ async function pickDialogs(n) {
 const fmtV = v => Array.isArray(v) ? v.join(", ") : v === true ? "да" : v === false ? "нет" : String(v ?? "—");
 function trialTable(t, crit) {
   const C = Object.fromEntries(crit.map(x => [x.id, x]));
-  return `<div class="tw" style="margin-top:12px"><table class="t"><thead><tr><th>Диалог</th><th>Крит.</th><th>Было</th><th>Стало</th></tr></thead><tbody>${t.results.map(r => `<tr><td class="id"><a href="#/dialog/${esc(r.dialog)}">${esc(r.dialog)}</a></td><td>${r.crit.slice(1)}</td><td>${r.before != null ? ansPill(C[r.crit], r.before) : '<span class="muted">—</span>'}</td>
-    <td>${r.error ? pill("bad", "Сбой") : ansPill(C[r.crit], r.answer)}${r.confidence != null ? `<span class="sub">уверенность ${Math.round(r.confidence * 100)}%</span>` : ""}</td></tr>
-    <tr><td colspan="4" class="sm muted" style="padding-top:0">${esc(r.error || (r.explanation || "").replace(/\[(\d+)\]/g, "#$1"))}</td></tr>`).join("")}</tbody></table></div><p class="sm muted" style="margin-top:6px">Стоимость прогона: ${money(t.cost, 4)}</p>`;
+  return `<div class="tw" style="margin-top:12px;border:1px solid var(--line)"><table class="t"><thead><tr><th>Диалог</th><th>Крит.</th><th>Было</th><th>Стало</th></tr></thead><tbody>${t.results.map(r => `<tr><td class="id"><a href="#/dialog/${esc(r.dialog)}">${esc(r.dialog)}</a></td><td>#${r.crit.slice(1)}</td><td>${r.before != null ? ansPill(C[r.crit], r.before) : '<span class="muted">—</span>'}</td>
+    <td>${r.error ? pill("bad", "Сбой") : ansPill(C[r.crit], r.answer)}${r.confidence != null ? `<span class="sub">${Math.round(r.confidence * 100)}%</span>` : ""}</td></tr>
+    <tr><td colspan="4" class="sm muted" style="padding-top:0">${esc(r.error || (r.explanation || "").replace(/\[(\d+)\]/g, "#$1"))}</td></tr>`).join("")}</tbody></table></div><p class="sm muted" style="margin-top:6px">Стоимость теста: ${money(t.cost, 4)}</p>`;
 }
 
-// ======================= как меня оценивают =======================
+// ======================= стандарты оценки =======================
 export async function rules(el, ctx) {
   const list = await api("/checklists");
   const a = list.find(c => c.status === "published");
@@ -148,15 +160,40 @@ export async function rules(el, ctx) {
   if (!ctx.alive()) return;
   let last = -1;
   const flag = c.criteria.find(x => x.type === "flag");
-  el.innerHTML = `<div class="ph"><div><h1>Как оценивается работа</h1><p>Чек-лист «${esc(c.name)}» v${c.version}, действует с ${dt(c.published_at || c.created_at)}. Модель проверяет каждый критерий отдельно и обязана сослаться на реплику диалога. Спорные оценки проверяет QA-специалист до того, как вы их увидите.</p></div></div>
-   <div class="cols ww"><div>${c.criteria.map(x => { const h = x.sec !== last ? `<h2 style="margin:${last < 0 ? 0 : 24}px 0 10px">${SECS[x.sec] ?? ""}</h2>` : ""; last = x.sec;
-     return h + `<div class="panel" style="margin-top:0;margin-bottom:8px"><div class="row"><b style="font-weight:500" class="grow">${x.id.slice(1)}. ${esc(x.name)}</b>${x.type === "flag" ? pill("bad", "Грубая ошибка · без баллов") : `<span class="num">${x.weight} ${plural(x.weight, "балл", "балла", "баллов")}</span>`}</div>
-       <p class="fg2 sm" style="margin-top:6px;max-width:80ch">${esc(x.rule)}</p><div class="sm muted" style="margin-top:6px">Ответы: ${x.answers.map(o => ansLabel(x, o)).join(" · ")}</div></div>`; }).join("")}</div>
-   <div style="position:sticky;top:0;align-self:start"><div class="panel"><h3>Как считается итог</h3><ul class="sm fg2" style="margin:10px 0 0;padding-left:18px;display:grid;gap:8px">
-     <li>Сумма весов критериев — 100 баллов. «Да» даёт полный вес, «Нет» — ноль, шкала — пропорционально ступени.</li>
-     <li>N/A — критерий неприменим к диалогу (например, не нужно было смотреть счёт). Его вес не теряется: он перераспределяется на остальные критерии.</li>
-     <li>Бот и реплики до перевода на оператора не оцениваются — это контекст.</li>
-     ${flag ? `<li>«${esc(flag.name)}» — отдельный флаг. Балл не обнуляет, но такой диалог обязательно проверит QA и разберёт комплаенс.</li>` : ""}
-     <li>Итог округляется до сотых.</li></ul></div>
-     <div class="panel"><h3>Если не согласны</h3><p class="sm fg2" style="margin-top:8px">Откройте диалог, разверните критерий и выберите ответ, который считаете верным. Опишите довод со ссылкой на реплику — например, «#12: я назвал срок». QA решает по каждому критерию, балл пересчитается автоматически, а прежняя версия оценки сохранится в истории.</p></div></div></div>`;
+  el.innerHTML = `<div class="ph"><div><h1>Стандарты оценки</h1><p>Активный чек-лист «${esc(c.name)}» v${c.version} от ${dt(c.published_at || c.created_at)}. Каждый ответ ИИ обязан ссылаться на конкретную реплику диалога.</p></div></div>
+   <div class="cols ww flush-cols">
+     <div class="col-pane" style="padding:0">
+       <div class="cl-list">
+         ${c.criteria.map(x => {
+           const secIdx = x.type === "flag" ? 3 : (x.sec ?? 0);
+           const h = secIdx !== last ? `<div class="ox-sec"><span>${SECS[secIdx] ?? ""}</span></div>` : "";
+           last = secIdx;
+           return h + `<div class="cl-item">
+             <div class="cl-row">
+               <span class="num muted" style="width:24px">${String(x.id.slice(1)).padStart(2, "0")}</span>
+               <b class="grow" style="font-weight:600">${esc(x.name)}</b>
+               ${x.type === "flag" ? pill("bad", "Флаг риска · без веса") : `<span class="num sm">Вес ${x.weight}%</span>`}
+             </div>
+             <div class="cl-preview fg2 sm" style="white-space:normal;line-height:1.5">${esc(x.rule)}</div>
+             <div class="cl-preview muted sm" style="padding-top:2px">Варианты оценки: ${x.answers.map(o => ansLabel(x, o)).join(" · ")}</div>
+           </div>`;
+         }).join("")}
+       </div>
+     </div>
+     <div class="col-pane">
+       <div class="sec">
+         <h2>Правила расчёта балла</h2>
+         <ul class="sm fg2" style="margin:10px 0 0;padding-left:18px;display:grid;gap:8px;line-height:1.5">
+           <li>Сумма весов критериев 1–7 равна <b>100 баллам</b>.</li>
+           <li>При ответе <b>N/A</b> критерий исключается из знаменателя, а его вес пропорционально распределяется между применимыми критериями (<code>k = 100 / W_app</code>).</li>
+           <li>Реплики бота и IVR до перевода на оператора служат контекстом и не штрафуют оператора.</li>
+           ${flag ? `<li><b>«${esc(flag.name)}» (п.8)</b> — отдельный флаг комплаенс-риска. Он <b>не обнуляет</b> арифметический балл диалога, но направляет обращение на проверку.</li>` : ""}
+         </ul>
+       </div>
+       <div class="sec" style="border-top:1px solid var(--line);padding-top:16px">
+         <h2>Порядок апелляции</h2>
+         <p class="sm fg2" style="margin-top:6px;line-height:1.5">Откройте диалог, кликните по спорному критерию, укажите верный вариант ответа и сошлитесь на номер реплики (например, <code>#12</code>). После решения QA балл пересчитается автоматически.</p>
+       </div>
+     </div>
+   </div>`;
 }

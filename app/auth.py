@@ -5,6 +5,8 @@ from fastapi import Depends, HTTPException, Request
 
 from .db import one, run
 
+ACTIVE_ROLES = ("qa", "op", "lead", "adm")
+
 COOKIE = "cqa_session"
 IDLE_MIN = int(os.environ.get("SESSION_IDLE_MIN", "720"))  # демо: сессия не истекает во время защиты
 DEMO = os.environ.get("DEMO_LOGIN", "1") == "1"
@@ -44,7 +46,7 @@ def current_user(request: Request):
         raise HTTPException(401, "Войдите в систему")
     s = one(f"""SELECT u.*, s.last_seen < now() - interval '{IDLE_MIN} minutes' AS expired
                FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=%s""", tok)
-    if not s or s["expired"] or not s["active"]:
+    if not s or s["expired"] or not s["active"] or s["role"] not in ACTIVE_ROLES:
         if s:
             run("DELETE FROM sessions WHERE token=%s", tok)
         raise HTTPException(401, "Сессия истекла. Войдите снова")

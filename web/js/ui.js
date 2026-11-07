@@ -30,7 +30,7 @@ export const plural = (n, a, b, c) => { const m = Math.abs(n) % 100, k = m % 10;
 export const LANG = { RU: "Русский", KZ: "Казахский", EN: "Английский" };
 export const CH = { "agent chat": "Чат", "voice call": "Звонок" };
 export const SECS = ["Начало и понимание запроса", "Безопасность и решение", "Ведение и завершение", "Грубые нарушения"];
-export const ROLE = { qa: "QA-специалист", op: "Оператор", lead: "Руководитель группы", head: "Руководитель QA", dir: "Директор", comp: "Комплаенс", adm: "Администратор" };
+export const ROLE = { qa: "QA-специалист", op: "Оператор", lead: "Руководитель группы", adm: "Администратор" };
 export const ST = {
   new: ["na", "Не оценён"], evaluating: ["info", "Оценивается"], error: ["bad", "Оценка неполная"], review: ["warn", "Ждёт проверки"],
   published: ["acc", "Опубликовано"], acknowledged: ["na", "Ознакомлен"], appeal: ["info", "Апелляция"], revised: ["ok", "Пересмотрено"]
@@ -85,14 +85,22 @@ export const errorBox = e => `<div class="note bad">${esc(e.message || e)} <butt
 
 export function dialogTable(list, o = {}) {
   if (!list.length) return emptyBox(o.emptyT || "Ничего не найдено", o.emptyP || "Измените фильтры.", o.emptyActs);
-  return `<div class="tw"><table class="t"><thead><tr>${o.check ? '<th><input type="checkbox" data-all aria-label="Выбрать все"></th>' : ""}<th>Диалог</th>${o.reason ? "<th>Почему здесь</th>" : ""}<th>Оператор</th><th>Канал · язык</th><th class="r">Балл</th><th>Флаг</th><th>Статус</th><th>Дата</th></tr></thead><tbody>
+  return `<div class="tw"><table class="t"><thead><tr>${o.check ? '<th><input type="checkbox" data-all aria-label="Выбрать все"></th>' : ""}<th>Диалог</th>${o.reason ? "<th>Почему здесь</th>" : ""}${o.own ? "" : "<th>Оператор</th>"}<th>Канал · язык</th><th class="r">Балл</th><th>Флаг</th><th>Статус</th><th>Дата</th></tr></thead><tbody>
   ${list.map(d => `<tr class="go" data-open="${esc(d.id)}">${o.check ? `<td><input type="checkbox" data-pick="${esc(d.id)}" aria-label="Выбрать ${esc(d.id)}" ${d.wf_status === "evaluating" ? "disabled" : ""}></td>` : ""}<td class="id">${esc(d.id)}${d.cl_version && o.active && d.cl_version !== o.active ? `<span class="sub">по v${d.cl_version}</span>` : ""}</td>
     ${o.reason ? `<td><div class="chips">${d.wf_status === "appeal" ? pill("info", "Апелляция") : ""}${reasonPills(d.review)}</div></td>` : ""}
-    <td>${esc(d.operator)}<span class="sub">${esc(d.team)}</span></td><td>${CH[d.channel] || esc(d.channel)} · ${esc(d.language)}</td>
+    ${o.own ? "" : `<td>${esc(d.operator)}<span class="sub">${esc(d.team)}</span></td>`}<td>${CH[d.channel] || esc(d.channel)} · ${esc(d.language)}</td>
     <td class="r">${d.total != null ? `<span class="score ${scls(d.total)}">${fmt(d.total)}</span>` : '<span class="muted">—</span>'}</td>
     <td>${d.critical ? pill("bad", "Грубая ошибка") : '<span class="muted">—</span>'}</td>
     <td>${stPill(d.wf_status)}</td><td class="muted num" style="white-space:nowrap">${dt(d.occurred_at)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 export function bindOpen(el, go) {
-  $$("[data-open]", el).forEach(r => r.addEventListener("click", e => { if (e.target.closest("input,button,a")) return; go("dialog/" + r.dataset.open); }));
+  $$("[data-open]", el).forEach(r => {
+    r.tabIndex = 0;
+    r.setAttribute("aria-label", "Открыть диалог " + r.dataset.open);
+    r.addEventListener("click", e => { if (e.target.closest("input,button,a")) return; go("dialog/" + r.dataset.open); });
+    r.addEventListener("keydown", e => {
+      if (e.target !== r || !["Enter", " "].includes(e.key)) return;
+      e.preventDefault(); go("dialog/" + r.dataset.open);
+    });
+  });
 }

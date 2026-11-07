@@ -1,14 +1,15 @@
-// Экраны приложения. Каждый экспорт — функция (el, ctx), которая рисует раздел в el.
+// Экраны приложения: плоская архитектурная сетка с разделителями 1px (Linear / Vercel / Stripe Data Ledger).
 import { $, $$, api, esc, fmt, fmt0, money, scls, dt, ago, plural, toast, fail, busy, pill, stPill, reasonPills, ansLabel, ansPill, linkify,
   emptyBox, dialogTable, bindOpen, LANG, CH, SECS, ROLE, ST, REASON, AP_ST, VIOL, TRIGGER } from "./ui.js";
 export { dialog } from "./v_dialog.js";
 export { checklists, rules } from "./v_checklists.js";
+export { home } from "./workspace.js";
 
 const ph = (title, text, acts = "") => `<div class="ph"><div><h1>${title}</h1>${text ? `<p>${text}</p>` : ""}</div>${acts ? `<div class="acts">${acts}</div>` : ""}</div>`;
 const stat = (l, v, d = "", txt = false) => `<div><div class="l">${l}</div><div class="v ${txt ? "txt" : ""}">${v}</div>${d ? `<div class="d">${d}</div>` : ""}</div>`;
-const isStaff = r => ["qa", "head", "adm"].includes(r);
+const isStaff = r => ["qa", "adm"].includes(r);
 
-// ======================= очередь проверки =======================
+// ======================= очередь разбора =======================
 export async function queue(el, ctx) {
   const list = await api("/queue");
   if (!ctx.alive()) return;
@@ -18,10 +19,10 @@ export async function queue(el, ctx) {
   const lbl = k => k === "appeal" ? "Апелляции" : REASON[k][1];
   const cnt = Object.fromEntries(keys.map(k => [k, list.filter(d => has(d, k)).length]));
   const rows = st.f ? list.filter(d => has(d, st.f)) : list;
-  el.innerHTML = ph("Очередь проверки", `Модель оценила все диалоги. Сюда попадает только то, что требует человека: грубые ошибки, сбои, неуверенные и неподтверждённые ответы, апелляции и случайная выборка для контроля модели. Сначала самое рискованное.`,
-      rows.length ? `<button class="btn pri" id="first">Открыть первый</button>` : "")
+  el.innerHTML = ph(ctx.me.role === "qa" ? "Очередь QA" : "Очередь разбора", "",
+      rows.length ? `<button class="btn pri sm" id="first">Разобрать первый</button>` : "")
     + `<div class="filters"><div class="chips"><button class="chip ${!st.f ? "on" : ""}" data-f="">Все<span class="c">${list.length}</span></button>${keys.filter(k => cnt[k]).map(k => `<button class="chip ${st.f === k ? "on" : ""}" data-f="${k}">${lbl(k)}<span class="c">${cnt[k]}</span></button>`).join("")}</div></div>`
-    + dialogTable(rows, { reason: true, active: ctx.me.checklist.version, emptyT: "Очередь пуста", emptyP: "Все оценки проверены и опубликованы. Новые диалоги загружаются в разделе «Новые диалоги», после оценки спорные появятся здесь.", emptyActs: `<a class="btn" href="#/upload">Загрузить диалоги</a>` });
+    + dialogTable(rows, { reason: true, active: ctx.me.checklist.version, emptyT: "Очередь разбора пуста", emptyP: "Все спорные диалоги проверены и опубликованы.", emptyActs: `<a class="btn sm" href="#/upload">Загрузить диалоги</a>` });
   $$("[data-f]", el).forEach(b => b.onclick = () => { st.f = b.dataset.f; queue(el, ctx); });
   bindOpen(el, ctx.go);
   const f = $("#first", el); if (f) f.onclick = () => ctx.go("dialog/" + rows[0].id);
@@ -32,25 +33,29 @@ export async function upload(el, ctx) {
   const st = upload.st || (upload.st = { tab: "file", text: "", channel: "agent chat", pick: new Set() });
   const [fresh, jobs] = await Promise.all([api("/dialogs?status=new"), api("/jobs")]);
   if (!ctx.alive()) return;
-  const tabs = [["file", "Файл выгрузки"], ["text", "Вставить текст"], ["new", `Неоценённые · ${fresh.length}`]];
+  const tabs = [["file", "JSON-выгрузка"], ["text", "Текстовый ввод"], ["new", `Ожидают оценки · ${fresh.length}`]];
   let body = "";
-  if (st.tab === "file") body = `<div class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать файл JSON">
-      <h3>Перетащите файл JSON или нажмите, чтобы выбрать</h3>
-      <p class="sm" style="margin-top:6px;max-width:70ch">Подходит выгрузка контакт-центра в формате хакатона: объекты с <code>conversation_id</code> и <code>transcript</code> на любой глубине. Повторы с тем же текстом пропускаются, оценка начнётся сразу после загрузки.</p>
-      <input type="file" id="fi" accept=".json,application/json" hidden></div>
-      <label class="chk" style="margin-top:12px"><input type="checkbox" id="ev" checked> Сразу оценить моделью</label>`;
-  else if (st.tab === "text") body = `<div class="cols w"><div>
-      <label class="l" for="tx" style="margin-top:0">Переписка: одна реплика на строку</label>
-      <textarea class="f" id="tx" rows="12" placeholder="Клиент: Здравствуйте, не могу вывести деньги на карту&#10;Оператор: Здравствуйте! Меня зовут Айгерим. Подскажите номер договора?&#10;Клиент: 12345">${esc(st.text)}</textarea>
+  if (st.tab === "file") body = `<div class="col-pane">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать файл JSON">
+        <h3>Перетащите JSON-файл выгрузки или нажмите для выбора</h3>
+        <p class="sm muted" style="margin-top:4px;max-width:65ch">Формат выгрузки контакт-центра: массив или объект с <code>conversation_id</code> и <code>transcript</code>. Дубликаты пропускаются автоматически.</p>
+        <input type="file" id="fi" accept=".json,application/json" hidden>
+      </div>
+      <label class="chk" style="margin-top:12px"><input type="checkbox" id="ev"> Сразу оценить моделью (расходует бюджет API)</label>
+    </div>`;
+  else if (st.tab === "text") body = `<div class="cols w flush-cols"><div class="col-pane">
+      <label class="l" for="tx" style="margin-top:0">Текст диалога (одна реплика на строку)</label>
+      <textarea class="f mono sm" id="tx" rows="11" placeholder="Клиент: Здравствуйте, не могу вывести деньги на карту&#10;Оператор: Здравствуйте! Меня зовут Айгерим. Подскажите номер договора?&#10;Клиент: 12345">${esc(st.text)}</textarea>
       <div class="err hidden" id="txerr" role="alert"></div>
-      <div class="row" style="margin-top:12px"><select class="f" id="ch" style="width:auto"><option value="agent chat">Чат</option><option value="voice call" ${st.channel === "voice call" ? "selected" : ""}>Звонок (расшифровка)</option></select>
-        <button class="btn pri" id="send">Загрузить и оценить</button></div></div>
-      <div class="panel"><h3>Формат</h3><p class="sm fg2" style="margin-top:6px">Строка начинается с говорящего: <b>Клиент</b>, <b>Оператор</b>, <b>Бот</b> или <b>Система</b>. Время в начале необязательно: <code>[10:42] Оператор: …</code>. Язык определяется автоматически. Если в тексте нет реплик оператора, оценивать нечего — система скажет об этом до вызова модели.</p></div></div>`;
-  else body = fresh.length ? `<div class="row" style="margin-bottom:12px"><span class="muted sm" id="pc">Выбрано: ${st.pick.size}</span><span class="grow"></span><button class="btn" id="all">Выбрать все</button><button class="btn pri" id="go" ${st.pick.size ? "" : "disabled"}>Оценить выбранные</button></div>` + dialogTable(fresh, { check: true })
-    : emptyBox("Все диалоги оценены", "Здесь появляются загруженные без оценки диалоги: например, если при загрузке сняли галочку «Сразу оценить».");
-  el.innerHTML = ph("Новые диалоги", "Загрузка выгрузки, ввод переписки вручную или оценка уже загруженных. Модель проверяет каждый критерий отдельным запросом, общий текст диалога кешируется: ~5 секунд и ~$0,02 на диалог.")
+      <div class="row" style="margin-top:12px"><select class="f sm" id="ch" style="width:auto"><option value="agent chat">Чат</option><option value="voice call" ${st.channel === "voice call" ? "selected" : ""}>Звонок (ASR)</option></select>
+        <button class="btn pri sm" id="send">Импортировать и оценить</button></div></div>
+      <div class="col-pane"><h3>Правила разбора</h3><p class="sm fg2" style="margin-top:6px;line-height:1.5">Каждая строка начинается с роли говорящего: <b>Клиент:</b>, <b>Оператор:</b>, <b>Бот:</b> или <b>Система:</b>. Таймстемпы вида <code>[10:42]</code> распознаются автоматически. Язык (RU / KZ / EN) определяется по тексту.</p></div></div>`;
+  else body = fresh.length ? `<div class="filters"><span class="muted sm" id="pc">Выбрано: ${st.pick.size}</span><span class="grow"></span><button class="btn sm" id="all">Выбрать все</button><button class="btn pri sm" id="go" ${st.pick.size ? "" : "disabled"}>Оценить выбранные</button></div>` + dialogTable(fresh, { check: true })
+    : emptyBox("Нет неоценённых диалогов", "Все импортированные обращения уже обработаны моделью.");
+
+  el.innerHTML = ph("Загрузка данных", "Добавьте JSON-файл или вставьте текст разговора. Оценка моделью расходует бюджет API.")
     + `<div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${st.tab === k ? "on" : ""}" aria-selected="${st.tab === k}">${t}</button>`).join("")}</div>${body}`
-    + `<div class="sec" style="margin-top:var(--s-2xl)"><h2>Последние пакеты</h2>${jobs.length ? `<div class="tw"><table class="t"><thead><tr><th>Пакет</th><th>Запустил</th><th class="r">Диалогов</th><th>Начат</th><th>Статус</th></tr></thead><tbody>${jobs.slice(0, 8).map(j => `<tr class="go" data-job="${j.id}"><td class="id">${esc(j.title)}</td><td>${esc(j.who || "система")}</td><td class="r num">${j.dialog_ids.length}</td><td class="muted">${ago(j.created_at)}</td><td>${j.finished_at ? pill("ok", "Готово") : pill("info pulse", "Идёт", "pulse")}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">Пакетов пока нет.</p>`}</div>`;
+    + `<div class="sec-hd">История пакетной оценки</div>${jobs.length ? `<div class="tw"><table class="t"><thead><tr><th>Пакет</th><th>Инициатор</th><th class="r">Диалогов</th><th>Запущен</th><th>Статус</th></tr></thead><tbody>${jobs.slice(0, 8).map(j => `<tr class="go" data-job="${j.id}"><td class="id">${esc(j.title)}</td><td>${esc(j.who || "система")}</td><td class="r num">${j.dialog_ids.length}</td><td class="muted">${ago(j.created_at)}</td><td>${j.finished_at ? pill("ok", "Готово") : pill("info pulse", "В работе", "pulse")}</td></tr>`).join("")}</tbody></table></div>` : `<div class="col-pane muted sm">Пакетов оценки пока нет.</div>`}`;
 
   $$("[data-tab]", el).forEach(b => b.onclick = () => { st.tab = b.dataset.tab; upload(el, ctx); });
   $$("[data-job]", el).forEach(r => r.onclick = () => ctx.go("jobs/" + r.dataset.job));
@@ -64,9 +69,9 @@ export async function upload(el, ctx) {
     const drop = $("#drop", el), fi = $("#fi", el);
     const read = async f => {
       if (!f) return;
-      drop.innerHTML = `<h3><span class="spin" style="display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px"></span> Читаем ${esc(f.name)}…</h3>`;
+      drop.innerHTML = `<h3>Чтение ${esc(f.name)}…</h3>`;
       try {
-        let data; try { data = JSON.parse(await f.text()); } catch { throw new Error(`${f.name}: это не JSON. Нужна выгрузка с conversation_id и transcript`); }
+        let data; try { data = JSON.parse(await f.text()); } catch { throw new Error(`${f.name}: некорректный JSON`); }
         done(await api("/dialogs", { body: { records: data, evaluate: $("#ev", el).checked } }));
       } catch (e) { fail(e); upload(el, ctx); }
     };
@@ -81,7 +86,7 @@ export async function upload(el, ctx) {
     $("#ch", el).onchange = e => { st.channel = e.target.value; };
     $("#send", el).onclick = e => busy(e.currentTarget, async () => {
       const er = $("#txerr", el); er.classList.add("hidden");
-      if (!st.text.trim()) { er.textContent = "Вставьте переписку"; er.classList.remove("hidden"); return tx.focus(); }
+      if (!st.text.trim()) { er.textContent = "Вставьте текст диалога"; er.classList.remove("hidden"); return tx.focus(); }
       try { const r = await api("/dialogs", { body: { text: st.text, channel: st.channel } }); st.text = ""; done(r); }
       catch (x) { er.textContent = x.message; er.classList.remove("hidden"); tx.focus(); }
     });
@@ -111,18 +116,17 @@ export async function jobs(el, ctx) {
   const reused = its.filter(i => i.source === "reused").length;
   const running = !j.finished_at;
   const crit = ev.filter(e => e.critical).length, part = ev.filter(e => e.status === "partial").length, rev = ev.filter(e => e.wf_status === "review").length;
-  el.innerHTML = ph(esc(j.title), running ? "Модель оценивает критерии параллельно. Можно уйти со страницы: оценка продолжится, результат придёт в уведомления." : `Готово ${dt(j.finished_at)}. Спорное ушло в очередь проверки, остальное опубликовано или ждёт подтверждения.`,
-      !running && rev ? `<a class="btn pri" href="#/queue">К очереди проверки · ${rev}</a>` : "")
-    + `<div class="strip">${stat("Диалогов", `${fin} из ${total}`)}${stat("Критериев оценено", `${doneIt} из ${its.length}`, reused ? `${reused} переиспользовано без модели` : "")}${stat("Вызовов модели", fmt0(calls))}${stat("Стоимость", money(cost, 3))}${stat("Грубые ошибки", crit, part ? `сбой оценки: ${part}` : "")}</div>`
-    + `<div class="prog" style="margin-bottom:var(--s-xl)" role="progressbar" aria-valuenow="${doneIt}" aria-valuemax="${its.length}"><b style="width:${its.length ? doneIt / its.length * 100 : 0}%"></b></div>`
-    + `<div class="tw"><table class="t"><thead><tr><th>Диалог</th><th>Критерии</th><th class="r">Балл</th><th>Флаг</th><th>Итог проверки</th><th class="r">Время</th><th class="r">Стоимость</th></tr></thead><tbody>
+  el.innerHTML = ph(esc(j.title), running ? "Параллельная оценка критериев моделью…" : `Завершено ${dt(j.finished_at)}.`,
+      !running && rev ? `<a class="btn pri sm" href="#/queue">В очередь разбора (${rev})</a>` : "")
+    + `<div class="strip">${stat("Диалогов", `${fin} / ${total}`)}${stat("Критериев", `${doneIt} / ${its.length}`, reused ? `${reused} из кеша` : "")}${stat("Вызовов LLM", fmt0(calls))}${stat("Стоимость", money(cost, 3))}${stat("Грубые ошибки", crit, part ? `сбоев: ${part}` : "")}</div>`
+    + `<div class="prog" role="progressbar" aria-valuenow="${doneIt}" aria-valuemax="${its.length}"><b style="width:${its.length ? doneIt / its.length * 100 : 0}%"></b></div>`
+    + `<div class="tw"><table class="t"><thead><tr><th>Диалог</th><th>Матрица критериев (1–8)</th><th class="r">Балл</th><th>Риск</th><th>Статус</th><th class="r">Время</th><th class="r">Цена</th></tr></thead><tbody>
       ${ev.map(e => `<tr class="go" data-open="${esc(e.dialog_id)}"><td class="id">${esc(e.dialog_id)}<span class="sub">${TRIGGER[e.trigger] || ""}</span></td>
-        <td><div class="cells">${(e.items || []).map(i => `<i class="${i.status === "pending" ? "p" : i.status === "error" ? "e" : i.source === "reused" ? "r" : i.low ? "w" : "d"}" title="${i.crit.slice(1)}: ${i.status === "pending" ? "оценивается" : i.status === "error" ? "сбой" : i.source === "reused" ? "переиспользован" : i.low ? "модель не уверена" : "готово"}"></i>`).join("")}</div></td>
+        <td><div class="cells">${(e.items || []).map(i => `<i class="${i.status === "pending" ? "p" : i.status === "error" ? "e" : i.source === "reused" ? "r" : i.low ? "w" : "d"}" title="Пункт ${i.crit.slice(1)}"></i>`).join("")}</div></td>
         <td class="r">${e.status === "running" ? "…" : e.total != null ? `<span class="score ${scls(e.total)}">${fmt(e.total)}</span>` : "—"}</td>
         <td>${e.critical ? pill("bad", "Грубая ошибка") : '<span class="muted">—</span>'}</td>
-        <td>${e.status === "running" ? pill("info pulse", "Оценивается", "pulse") : `${stPill(e.wf_status)} ${reasonPills(e.review)}`}</td>
-        <td class="r muted num">${e.seconds != null ? String(e.seconds).replace(".", ",") + " с" : "—"}</td><td class="r muted num">${money(e.cost, 3)}</td></tr>`).join("")}</tbody></table></div>
-      <p class="sm muted" style="margin-top:10px">Клетка — критерий. Яркая — ответ модели, приглушённая — ответ переиспользован (смысл критерия не менялся), жёлтая — модель не уверена, красная — сбой: остальные критерии сохранены, упавшие повторяются из карточки.</p>`;
+        <td>${e.status === "running" ? pill("info pulse", "В работе", "pulse") : `${stPill(e.wf_status)} ${reasonPills(e.review)}`}</td>
+        <td class="r muted num">${e.seconds != null ? String(e.seconds).replace(".", ",") + " с" : "—"}</td><td class="r muted num">${money(e.cost, 3)}</td></tr>`).join("")}</tbody></table></div>`;
   bindOpen(el, ctx.go);
   if (running) setTimeout(() => ctx.alive() && jobs(el, ctx), 1500);
   else if (jobs.last !== j.id) { jobs.last = j.id; ctx.refresh(); }
@@ -130,30 +134,36 @@ export async function jobs(el, ctx) {
 
 // ======================= все диалоги =======================
 export async function dialogs(el, ctx) {
+  const request = Symbol();
+  ctx.dialogsRequest = request;
   const R = ctx.me.role;
-  const st = dialogs.st || (dialogs.st = { q: "", status: "", lang: "", channel: "", critical: false, failed: "", team: "", operator: "", pick: new Set() });
-  if (ctx.arg) { const p = new URLSearchParams(ctx.arg); for (const [k, v] of p) st[k] = k === "critical" ? v === "1" : v; history.replaceState(null, "", "#/dialogs"); }
+  const stores = dialogs.states || (dialogs.states = {});
+  const st = stores[ctx.me.id] || (stores[ctx.me.id] = { q: "", status: "", lang: "", channel: "", critical: false, failed: "", team: "", operator: "", pick: new Set() });
+  if (ctx.arg) { Object.assign(st, {q:"", status:"", lang:"", channel:"", critical:false, failed:"", team:"", operator:"", pick:new Set()}); const p = new URLSearchParams(ctx.arg); for (const [k, v] of p) st[k] = k === "critical" ? v === "1" : v; history.replaceState(null, "", "#/dialogs"); ctx.arg = ""; }
   const qs = new URLSearchParams(); ["q", "status", "lang", "channel", "failed", "team", "operator"].forEach(k => st[k] && qs.set(k, st[k])); if (st.critical) qs.set("critical", "true");
   const [list, teams] = await Promise.all([api("/dialogs?" + qs), dialogs.teams || api("/teams")]);
   dialogs.teams = teams;
   if (!ctx.alive()) return;
   const crit = (await rulesCache()).criteria.filter(c => c.type !== "flag");
+  if (!ctx.alive() || ctx.dialogsRequest !== request) return;
   const can = isStaff(R);
   const opt = (v, t, cur) => `<option value="${esc(v)}" ${cur === v ? "selected" : ""}>${esc(t)}</option>`;
-  el.innerHTML = ph(R === "lead" ? "Диалоги группы" : "Диалоги", `${list.length} ${plural(list.length, "диалог", "диалога", "диалогов")}${st.operator ? ` оператора ${esc(st.operator)}` : ""}. Откройте строку, чтобы увидеть баллы, обоснования и реплики-доказательства.`,
-      `<a class="btn" href="/api/export/dialogs.csv">Выгрузить CSV</a>${can ? `<a class="btn" href="/api/export/results.json">Результаты JSON 1.0</a>` : ""}`)
+  el.innerHTML = ph(R === "lead" ? "Диалоги группы" : "Диалоги", st.operator ? esc(st.operator) : "",
+      `${R === "qa" ? `<a class="btn pri sm" href="#/upload">Загрузить диалог</a>` : ""}<a class="btn sm" href="/api/export/dialogs.csv">Экспорт CSV</a>${can ? `<a class="btn sm" href="/api/export/results.json">Экспорт JSON</a>` : ""}`)
+    + (R === "qa" ? `<div class="strip">${stat("Всего",list.length)}${stat("На проверке",list.filter(d=>d.wf_status === "review").length)}${stat("Грубые ошибки",list.filter(d=>d.critical).length)}</div>` : "")
+    + (st.operator && ["lead", "qa"].includes(R) ? `<div class="list-context"><span>Разбор разговоров сотрудника: <b>${esc(st.operator)}</b></span><a class="btn sm" href="#/team">К сотрудникам</a></div>` : "")
     + `<div class="filters" role="search">
-       <input type="search" id="q" placeholder="Номер диалога или оператор" value="${esc(st.q)}" aria-label="Поиск">
-       <select id="status" aria-label="Статус"><option value="">Любой статус</option>${Object.entries(ST).map(([k, v]) => opt(k, v[1], st.status)).join("")}</select>
-       <select id="failed" aria-label="Нарушен критерий"><option value="">Любые критерии</option>${crit.map(c => opt(c.id, `Не выполнен: ${c.name}`, st.failed)).join("")}</select>
+       <input type="search" id="q" placeholder="Поиск по ID или оператору…" value="${esc(st.q)}" aria-label="Поиск">
+       <select id="status" aria-label="Статус"><option value="">Все статусы</option>${Object.entries(ST).map(([k, v]) => opt(k, v[1], st.status)).join("")}</select>
+       <select id="failed" aria-label="Нарушен критерий"><option value="">Все критерии</option>${crit.map(c => opt(c.id, `Нарушен п.${c.id.slice(1)}: ${c.name}`, st.failed)).join("")}</select>
        <select id="lang" aria-label="Язык"><option value="">Все языки</option>${Object.entries(LANG).map(([k, v]) => opt(k, v, st.lang)).join("")}</select>
-       <select id="channel" aria-label="Канал"><option value="">Чаты и звонки</option>${Object.entries(CH).map(([k, v]) => opt(k, v, st.channel)).join("")}</select>
+       <select id="channel" aria-label="Канал"><option value="">Все каналы</option>${Object.entries(CH).map(([k, v]) => opt(k, v, st.channel)).join("")}</select>
        ${R !== "lead" ? `<select id="team" aria-label="Группа"><option value="">Все группы</option>${teams.map(t => opt(t, t, st.team)).join("")}</select>` : ""}
-       <label class="chk"><input type="checkbox" id="critical" ${st.critical ? "checked" : ""}> Только грубые ошибки</label>
+       <label class="chk sm"><input type="checkbox" id="critical" ${st.critical ? "checked" : ""}> Грубые ошибки</label>
        ${st.operator ? `<button class="chip on" id="unop">${esc(st.operator)} ✕</button>` : ""}
-       ${Object.entries(st).some(([k, v]) => k !== "pick" && v) ? `<button class="btn link" id="reset">Сбросить</button>` : ""}</div>`
-    + (can ? `<div class="row ${st.pick.size ? "" : "hidden"}" id="bulk" style="margin-bottom:10px"><span class="sm muted" id="pc"></span><button class="btn pri sm" id="re">Переоценить выбранные</button><button class="btn sm" id="clr">Снять выбор</button></div>` : "")
-    + dialogTable(list, { check: can, active: ctx.me.checklist.version, emptyT: "Ничего не найдено", emptyP: "Под фильтры не попал ни один диалог. Измените условия или сбросьте их." });
+       ${Object.entries(st).some(([k, v]) => k !== "pick" && v) ? `<button class="btn sm link" id="reset">Сбросить</button>` : ""}</div>`
+    + (can ? `<div class="filters bulk-selection ${st.pick.size ? "" : "hidden"}" id="bulk" role="region" aria-label="Действия с выбранными диалогами"><span id="pc" role="status"></span><div class="bulk-selection-actions"><button class="btn sm" id="clr">Снять выбор</button><button class="btn pri sm" id="re">Переоценить выбранные</button></div></div>` : "")
+    + dialogTable(list, { check: can, active: ctx.me.checklist.version, emptyT: "Диалоги не найдены", emptyP: "Попробуйте изменить параметры фильтрации." });
   const re = () => dialogs(el, ctx);
   let t; $("#q", el).oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value; re().then(() => { const q = $("#q", el); q?.focus(); q?.setSelectionRange(q.value.length, q.value.length); }); }, 300); };
   ["status", "failed", "lang", "channel", "team"].forEach(k => { const s = $("#" + k, el); if (s) s.onchange = () => { st[k] = s.value; re(); }; });
@@ -162,7 +172,7 @@ export async function dialogs(el, ctx) {
   const rs = $("#reset", el); if (rs) rs.onclick = () => { Object.assign(st, { q: "", status: "", lang: "", channel: "", critical: false, failed: "", team: "", operator: "" }); re(); };
   bindOpen(el, ctx.go);
   if (can) {
-    const sync = () => { $("#bulk", el).classList.toggle("hidden", !st.pick.size); $("#pc", el).textContent = `Выбрано: ${st.pick.size}`; $$("[data-pick]", el).forEach(c => { c.checked = st.pick.has(c.dataset.pick); c.closest("tr").classList.toggle("sel", c.checked); }); };
+    const sync = () => { $("#bulk", el).classList.toggle("hidden", !st.pick.size); $("#pc", el).textContent = `Выбрано ${st.pick.size} ${plural(st.pick.size, "диалог", "диалога", "диалогов")}`; const allBox = $("[data-all]", el); if (allBox) { const eligible = list.filter(d => d.wf_status !== "evaluating"); const selected = eligible.filter(d => st.pick.has(d.id)).length; allBox.checked = eligible.length > 0 && selected === eligible.length; allBox.indeterminate = selected > 0 && selected < eligible.length; } $$("[data-pick]", el).forEach(c => { c.checked = st.pick.has(c.dataset.pick); c.closest("tr").classList.toggle("sel", c.checked); }); };
     $$("[data-pick]", el).forEach(c => c.onchange = () => { c.checked ? st.pick.add(c.dataset.pick) : st.pick.delete(c.dataset.pick); sync(); });
     const ha = $("[data-all]", el); if (ha) ha.onchange = () => { st.pick = new Set(ha.checked ? list.filter(d => d.wf_status !== "evaluating").map(d => d.id) : []); sync(); };
     $("#clr", el).onclick = () => { st.pick.clear(); sync(); };
@@ -177,25 +187,26 @@ async function rulesCache() { if (!_rules || Date.now() - _rules.t > 30000) { co
 // ======================= грубые ошибки =======================
 export async function violations(el, ctx) {
   const st = violations.st || (violations.st = { s: "open", open: null, note: {} });
-  const R = ctx.me.role, can = ["comp", "head"].includes(R);
+  const R = ctx.me.role, can = ["qa"].includes(R);
+  if (ctx.arg) { st.open = ctx.arg; st.s = "all"; ctx.arg = ""; history.replaceState(null, "", "#/violations"); }
   const { rows, counts } = await api("/violations?status=" + st.s);
   if (!ctx.alive()) return;
   const tabs = [["open", "Открытые"], ["new", "Новые"], ["work", "В работе"], ["closed", "Закрытые"], ["all", "Все"]];
-  el.innerHTML = ph("Грубые ошибки", "Диалоги, где модель или QA зафиксировали грубое нарушение: передачу данных без подтверждения личности, обещание доходности, грубость. Флаг не обнуляет балл, но каждое нарушение разбирается отдельно. Причина и цитата — из оценки.")
+  el.innerHTML = ph("Инциденты", "")
     + `<div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" data-s="${k}" class="${st.s === k ? "on" : ""}">${t} · ${counts[k]}</button>`).join("")}</div>`
-    + (rows.length ? `<div class="tw"><table class="t"><thead><tr><th>Диалог</th><th>Оператор</th><th>Причина и цитата</th><th class="r">Балл</th><th>Статус</th><th>Дата</th></tr></thead><tbody>
+    + (rows.length ? `<div class="tw"><table class="t"><thead><tr><th>Диалог</th><th>Оператор</th><th>Обоснование и цитата</th><th class="r">Балл</th><th>Статус</th><th>Дата</th></tr></thead><tbody>
       ${rows.map(r => `<tr class="go" data-row="${esc(r.id)}"><td class="id">${esc(r.id)}<span class="sub">${CH[r.channel] || ""} · ${esc(r.language)}</span></td><td>${esc(r.operator)}<span class="sub">${esc(r.team)}</span></td>
-        <td class="wrap"><div class="sm">${linkify(r.reason || "")}</div>${r.quote ? `<div class="quote" style="margin-top:6px">#${r.quote.turn} · «${esc(r.quote.text.length > 220 ? r.quote.text.slice(0, 220) + "…" : r.quote.text)}»</div>` : ""}${r.source === "qa" ? `<div style="margin-top:6px">${pill("info", "Подтверждено QA")}</div>` : ""}</td>
+        <td class="wrap"><div class="sm">${linkify(r.reason || "")}</div>${r.quote ? `<div class="quote" style="margin-top:4px">#${r.quote.turn} · «${esc(r.quote.text.length > 200 ? r.quote.text.slice(0, 200) + "…" : r.quote.text)}»</div>` : ""}</td>
         <td class="r"><span class="score ${scls(r.total)}">${fmt(r.total)}</span></td><td>${pill(VIOL[r.viol_status][0], VIOL[r.viol_status][1])}${r.viol_note ? `<span class="sub" style="max-width:220px">${esc(r.viol_note)}</span>` : ""}</td><td class="muted num" style="white-space:nowrap">${dt(r.occurred_at)}</td></tr>
-        ${can && st.open === r.id ? `<tr><td colspan="6" style="background:var(--sunken)"><div class="row" style="align-items:flex-start;gap:12px"><div class="grow"><label class="l" for="vn" style="margin-top:0">Принятые меры ${r.viol_status === "closed" ? "" : "(обязательно для закрытия)"}</label><textarea class="f" id="vn" placeholder="Например: разбор с оператором 12.11, повторное обучение по верификации">${esc(st.note[r.id] ?? r.viol_note ?? "")}</textarea></div>
-          <div class="acts" style="padding-top:24px">${r.viol_status !== "work" ? `<button class="btn" data-vs="work">В работу</button>` : ""}${r.viol_status !== "closed" ? `<button class="btn pri" data-vs="closed">Закрыть</button>` : `<button class="btn" data-vs="work">Вернуть в работу</button>`}<a class="btn link" href="#/dialog/${esc(r.id)}">Открыть диалог</a></div></div></td></tr>` : ""}`).join("")}</tbody></table></div>`
-      : emptyBox(st.s === "closed" ? "Закрытых нарушений нет" : "Открытых нарушений нет", "Как только модель найдёт грубое нарушение, диалог появится здесь, а комплаенс и руководитель группы получат уведомление."));
+        ${can && st.open === r.id ? `<tr><td colspan="6" style="background:var(--sunken);padding:12px 28px"><div class="row" style="align-items:flex-end;gap:10px"><div class="grow"><label class="l" for="vn" style="margin-top:0">Решение по инциденту</label><input class="f sm" id="vn" placeholder="Принятые меры (разбор с оператором, повторный инструктаж)…" value="${esc(st.note[r.id] ?? r.viol_note ?? "")}"></div>
+          <div class="acts">${r.viol_status !== "work" ? `<button class="btn sm" data-vs="work">В работу</button>` : ""}${r.viol_status !== "closed" ? `<button class="btn pri sm" data-vs="closed">Закрыть инцидент</button>` : `<button class="btn sm" data-vs="work">Переоткрыть</button>`}<a class="btn sm" href="#/dialog/${esc(r.id)}">Проверить разговор</a></div></div></td></tr>` : ""}`).join("")}</tbody></table></div>`
+      : emptyBox("Инцидентов не найдено", "В выбранном статусе грубых нарушений нет."));
   $$("[data-s]", el).forEach(b => b.onclick = () => { st.s = b.dataset.s; st.open = null; violations(el, ctx); });
-  $$("[data-row]", el).forEach(r => r.onclick = e => { if (e.target.closest("button,a")) return; if (!can) return ctx.go("dialog/" + r.dataset.row); st.open = st.open === r.dataset.row ? null : r.dataset.row; violations(el, ctx).then(() => $("#vn", el)?.focus()); });
+  $$("[data-row]", el).forEach(r => r.onclick = e => { if (e.target.closest("button,a,input")) return; if (!can) return ctx.go("dialog/" + r.dataset.row); st.open = st.open === r.dataset.row ? null : r.dataset.row; violations(el, ctx).then(() => $("#vn", el)?.focus()); });
   const vn = $("#vn", el); if (vn) vn.oninput = () => { st.note[st.open] = vn.value; };
   $$("[data-vs]", el).forEach(b => b.onclick = () => busy(b, async () => {
     await api("/violations/" + encodeURIComponent(st.open), { method: "PATCH", body: { status: b.dataset.vs, note: st.note[st.open] ?? vn.value } });
-    toast(b.dataset.vs === "closed" ? "Нарушение закрыто" : "Нарушение взято в работу"); delete st.note[st.open]; st.open = null; ctx.refresh(); await violations(el, ctx);
+    toast(b.dataset.vs === "closed" ? "Инцидент закрыт" : "Статус обновлён"); delete st.note[st.open]; st.open = null; ctx.refresh(); await violations(el, ctx);
   }));
 }
 
@@ -206,14 +217,13 @@ export async function appeals(el, ctx) {
   const st = appeals.st || (appeals.st = { s: "" });
   const list = await api("/appeals" + (st.s ? "?status=" + st.s : ""));
   if (!ctx.alive()) return;
-  const text = R === "op" ? "Апелляции на ваши оценки. Решение по каждому критерию принимает QA-специалист, балл пересчитывается автоматически." : R === "lead" ? "Апелляции операторов вашей группы. Вы можете отозвать необоснованную до решения QA." : "Оператор оспаривает ответ по конкретным критериям. Решение принимается по каждому, итог пересчитывается, версия оценки сохраняется в истории.";
-  el.innerHTML = ph(R === "op" ? "Мои апелляции" : "Апелляции", text)
+  el.innerHTML = ph(R === "op" ? "Мои апелляции" : "Апелляции", "")
     + `<div class="filters"><div class="chips">${[["", "Все"], ["open", "На рассмотрении"], ["accepted", "Приняты"], ["partial", "Частично"], ["rejected", "Отклонены"], ["withdrawn", "Отозваны"]].map(([k, t]) => `<button class="chip ${st.s === k ? "on" : ""}" data-s="${k}">${t}</button>`).join("")}</div></div>`
-    + (list.length ? `<div class="tw"><table class="t"><thead><tr><th>№</th><th>Диалог</th><th>Оператор</th><th>Критерии и довод</th><th class="r">Балл</th><th>Статус</th><th>Подана</th></tr></thead><tbody>
+    + (list.length ? `<div class="tw"><table class="t"><thead><tr><th>ID</th><th>Диалог</th><th>Оператор</th><th>Оспариваемые критерии и довод</th><th class="r">Балл</th><th>Статус</th><th>Дата</th></tr></thead><tbody>
       ${list.map(a => `<tr class="go" data-ap="${a.id}"><td class="id">А-${a.id}</td><td class="id">${esc(a.dialog_id)}</td><td>${esc(a.operator_name)}<span class="sub">${esc(a.team)}</span></td>
-        <td class="wrap"><div class="sm">Критерии ${a.items.map(i => i.crit.slice(1)).join(", ")}</div><div class="sm muted">«${esc(a.text.length > 140 ? a.text.slice(0, 140) + "…" : a.text)}»</div></td>
-        <td class="r num">${fmt(a.score_before)}${a.score_after != null && a.score_after !== a.score_before ? ` → <b>${fmt(a.score_after)}</b>` : ""}</td><td>${pill(AP_ST[a.status][0], AP_ST[a.status][1])}</td><td class="muted">${ago(a.created_at)}</td></tr>`).join("")}</tbody></table></div>`
-      : emptyBox("Апелляций нет", R === "op" ? "Если вы не согласны с оценкой, откройте диалог, выберите критерий и ответ, который считаете верным, и опишите довод." : "Здесь появятся апелляции операторов на опубликованные оценки."));
+        <td class="wrap"><div class="sm"><b>Пункты: ${a.items.map(i => "#" + i.crit.slice(1)).join(", ")}</b></div><div class="sm muted">«${esc(a.text.length > 140 ? a.text.slice(0, 140) + "…" : a.text)}»</div></td>
+        <td class="r num">${fmt(a.score_before)}${a.score_after != null && a.score_after !== a.score_before ? `  —  <b>${fmt(a.score_after)}</b>` : ""}</td><td>${pill(AP_ST[a.status][0], AP_ST[a.status][1])}</td><td class="muted">${ago(a.created_at)}</td></tr>`).join("")}</tbody></table></div>`
+      : emptyBox("Апелляций нет", "Спорных обращений по выбранному фильтру не найдено."));
   $$("[data-s]", el).forEach(b => b.onclick = () => { st.s = b.dataset.s; appeals(el, ctx); });
   $$("[data-ap]", el).forEach(r => r.onclick = () => ctx.go("appeals/" + r.dataset.ap));
 }
@@ -224,43 +234,61 @@ async function appealOne(el, ctx) {
   const a = await api("/appeals/" + id);
   if (!ctx.alive()) return;
   const e = a.evaluation, cr = Object.fromEntries(e.checklist.criteria.map(c => [c.id, c])), tr = a.dialog.transcript;
-  const open = a.status === "open", canDecide = open && ["qa", "head"].includes(R);
+  const open = a.status === "open", canDecide = open && ["qa"].includes(R);
   const refs = new Set(a.items.flatMap(i => e.items[i.crit]?.evidence || []));
   (a.text.match(/#(\d+)/g) || []).forEach(m => refs.add(+m.slice(1)));
-  el.innerHTML = ph(`Апелляция А-${a.id}`, `${esc(a.operator_name)} · диалог <a href="#/dialog/${esc(a.dialog_id)}">${esc(a.dialog_id)}</a> · подана ${dt(a.created_at)}`, pill(AP_ST[a.status][0], AP_ST[a.status][1]))
-    + `<div class="cols ww"><div>
-       <div class="panel"><div class="sm muted">Довод оператора</div><p style="margin-top:6px;max-width:70ch">${linkify(a.text).replace(/#(\d+)/g, '<button class="evc" data-ev="$1">#$1</button>')}</p></div>
-       ${a.items.map(it => { const c = cr[it.crit], m = e.items[it.crit] || {}; return `<div class="panel">
-         <div class="row"><b>${it.crit.slice(1)}. ${esc(c.name)}</b><span class="grow"></span><span class="sm muted">вес ${c.weight}</span></div>
-         <div class="row" style="margin-top:8px"><span class="sm muted">Текущий ответ</span>${ansPill(c, it.from)}<span class="muted">→</span><span class="sm muted">оператор просит</span>${ansPill(c, it.want)}</div>
-         <div class="box" style="margin-top:10px"><div class="h">Обоснование ${m.source === "qa" ? "QA" : "модели"}${m.confidence != null ? ` · уверенность ${Math.round(m.confidence * 100)}%` : ""}</div><div class="sm">${linkify(m.explanation || "—")}</div>
-           ${m.evidence?.length ? `<div class="chips">${m.evidence.map(n => `<button class="evc" data-ev="${n}">#${n}</button>`).join("")}</div>` : ""}</div>
-         <div class="sm muted" style="margin-top:8px">Правило: ${esc(c.rule)}</div>
-         ${canDecide ? `<div class="seg" style="margin-top:12px" role="group" aria-label="Решение по критерию ${it.crit.slice(1)}"><button data-d="${it.crit}" data-v="1" class="${st.dec[it.crit] === true ? "on" : ""}">Принять: ${esc(ansLabel(c, it.want))}</button><button data-d="${it.crit}" data-v="0" class="${st.dec[it.crit] === false ? "on" : ""}">Оставить: ${esc(ansLabel(c, it.from))}</button></div>`
-           : it.accepted != null ? `<div style="margin-top:10px">${it.accepted ? pill("ok", "Принято") : pill("na", "Оставлено без изменений")}</div>` : ""}</div>`; }).join("")}
-       ${canDecide ? `<div class="panel"><label class="l" for="cm" style="margin-top:0">Комментарий для оператора</label><textarea class="f" id="cm" placeholder="Почему решение такое. Оператор увидит комментарий в уведомлении и в истории диалога">${esc(st.comment)}</textarea>
-         <div class="err hidden" id="aerr" role="alert"></div>
-         <div class="row" style="margin-top:12px"><span class="sm muted" id="prev"></span><span class="grow"></span><button class="btn pri" id="dec">Принять решение</button></div></div>` : ""}
-       ${!open ? `<div class="panel"><div class="sm muted">Решение${a.decided_name ? " · " + esc(a.decided_name) : ""} · ${dt(a.decided_at)}</div><p style="margin-top:6px">${esc(a.comment || "")}</p>${a.score_after != null ? `<p class="sm" style="margin-top:6px">Балл: ${fmt(a.score_before)} → <b>${fmt(a.score_after)}</b></p>` : ""}</div>` : ""}
-       ${open && R === "lead" ? `<div class="panel"><label class="l" for="wd" style="margin-top:0">Отозвать апелляцию</label><textarea class="f" id="wd" placeholder="Причина отзыва: оператор увидит её"></textarea><div class="row" style="margin-top:10px"><span class="grow"></span><button class="btn" id="wdb">Отозвать</button></div></div>` : ""}
-       ${open && R === "op" ? `<div class="row"><span class="grow"></span><button class="btn" id="wdo">Отозвать апелляцию</button></div>` : ""}
-     </div>
-     <div class="panel" style="padding:0;position:sticky;top:0;max-height:calc(100vh - 140px);display:flex;flex-direction:column"><div class="sh" style="padding:12px 16px;border-bottom:1px solid var(--line)">Переписка · ${tr.length} реплик · отмечены упомянутые</div>
-       <div class="chat" id="chat" style="flex:1;overflow:auto">${tr.map((m, i) => { const n = i + 1; if (m.speaker === "system") return `<div class="sys ${refs.has(n) ? "ev" : ""}" id="m${n}">#${n} · ${esc(m.text)}</div>`;
-         return `<div class="msg ${m.speaker === "operator" ? "op" : ""} ${m.speaker === "bot" ? "ctx" : ""} ${refs.has(n) ? "ev" : ""}" id="m${n}"><div class="n">#${n}</div><div class="w"><b>${{ client: "Клиент", bot: "Бот AIM", operator: "Оператор" }[m.speaker]}</b>${esc(m.timestamp)}</div><div>${esc(m.text)}</div></div>`; }).join("")}</div></div></div>`;
-  $$(".evc", el).forEach(b => b.onclick = () => { const m = $("#m" + b.dataset.ev, el), C = $("#chat", el); if (!m) return; C.scrollTo({ top: m.offsetTop - C.offsetTop - 80, behavior: "smooth" }); m.classList.add("flash"); setTimeout(() => m.classList.remove("flash"), 1200); });
+  el.innerHTML = ph(`Апелляция А-${a.id}`, `${esc(a.operator_name)} · диалог <a href="#/dialog/${esc(a.dialog_id)}" class="mono">${esc(a.dialog_id)}</a> · ${dt(a.created_at)}`, `<div class="acts">${pill(AP_ST[a.status][0], AP_ST[a.status][1])}<a class="btn sm" href="#/dialog/${esc(a.dialog_id)}">Проверить разговор</a></div>`)
+    + `<div class="cols ww flush-cols appeal-layout">
+       <div class="col-pane appeal-review" style="padding:0"><div class="appeal-section-title"><h2>Пересмотр оценки</h2></div>
+         <div class="appeal-argument">
+           <div class="sm muted">Аргумент оператора</div>
+           <div style="margin-top:4px;font-weight:500">«${linkify(a.text)}»</div>
+         </div>
+         <div class="cl-list">
+           ${a.items.map(it => {
+             const c = cr[it.crit], m = e.items[it.crit] || {};
+             return `<div class="cl-item appeal-criterion">
+               <div class="row" style="justify-content:space-between">
+                 <b>#${it.crit.slice(1)} ${esc(c.name)} <span class="muted sm" style="font-weight:400">(вес ${c.weight})</span></b>
+                 <div class="row">${ansPill(c, it.from)}${ansPill(c, it.want)}</div>
+               </div>
+               <div class="sm fg2" style="margin-top:6px">${linkify(m.explanation || "—")}</div>
+               <div class="sm muted" style="margin-top:4px">Правило: ${esc(c.rule)}</div>
+               ${canDecide ? `<div class="seg sm" style="margin-top:10px"><button data-d="${it.crit}" data-v="1" class="${st.dec[it.crit] === true ? "on" : ""}">Принять (${esc(ansLabel(c, it.want))})</button><button data-d="${it.crit}" data-v="0" class="${st.dec[it.crit] === false ? "on" : ""}">Оставить (${esc(ansLabel(c, it.from))})</button></div>`
+                 : it.accepted != null ? `<div style="margin-top:8px">${it.accepted ? pill("ok", "Принято") : pill("na", "Отклонено")}</div>` : ""}
+             </div>`;
+           }).join("")}
+         </div>
+         ${canDecide ? `<div class="appeal-resolution"><label class="l" for="cm" style="margin-top:0">Резолюция QA для оператора</label><textarea class="f sm" id="cm" rows="2" placeholder="Обоснование решения по апелляции…">${esc(st.comment)}</textarea>
+           <div class="err hidden" id="aerr" role="alert"></div>
+           <div class="row" style="margin-top:10px"><span class="sm muted" id="prev"></span><span class="grow"></span><button class="btn pri sm" id="dec">Утвердить решение</button></div></div>` : ""}
+         ${!open ? `<div style="padding:16px 28px;background:var(--sunken)"><div class="sm muted">Решение QA (${esc(a.decided_name || "—")} · ${dt(a.decided_at)})</div><p class="sm" style="margin-top:4px">${esc(a.comment || "")}</p>${a.score_after != null ? `<p class="sm mono" style="margin-top:4px">Итоговый балл: ${fmt(a.score_before)}  —  <b>${fmt(a.score_after)}</b></p>` : ""}</div>` : ""}
+         ${open && R === "lead" ? `<div style="padding:16px 28px"><label class="l" for="wd" style="margin-top:0">Отзыв апелляции тимлидом</label><input class="f sm" id="wd" placeholder="Причина отзыва…"><div class="row" style="margin-top:8px"><button class="btn sm" id="wdb">Отозвать апелляцию</button></div></div>` : ""}
+         ${open && R === "op" ? `<div style="padding:16px 28px"><button class="btn sm" id="wdo">Отозвать мою апелляцию</button></div>` : ""}
+       </div>
+       <div class="col-pane appeal-transcript">
+         <div class="pane-h appeal-section-title"><h2>Разговор</h2><p>${tr.length} реплик</p></div>
+         <div class="chat-wrap" id="chat">${tr.map((m, i) => {
+           const n = i + 1;
+           if (m.speaker === "system") return `<div class="om-sys ${refs.has(n) ? "ev" : ""}" id="m${n}"><span>#${n} · ${esc(m.text)}</span></div>`;
+           return `<div class="t-turn ${m.speaker} ${refs.has(n) ? "sel" : ""}" id="m${n}"><div class="t-no">#${n}</div><div class="t-who"><b>${{ client: "Клиент", bot: "Бот", operator: "Оператор" }[m.speaker]}</b><span class="mono">${esc(m.timestamp)}</span></div><div class="t-txt">${esc(m.text)}</div><div></div></div>`;
+         }).join("")}</div>
+       </div>
+     </div>`;
+  $$(".evc", el).forEach(b => b.onclick = () => { const m = $("#m" + b.dataset.ev, el), C = $("#chat", el)?.parentElement; if (!m || !C) return; C.scrollTo({ top: m.offsetTop - 80, behavior: "smooth" }); m.classList.add("flash"); setTimeout(() => m.classList.remove("flash"), 1200); });
   if (canDecide) {
     const prev = () => {
       const all = a.items.every(i => st.dec[i.crit] !== undefined), acc = a.items.filter(i => st.dec[i.crit]).length;
-      $("#prev", el).textContent = !all ? `Решение по ${a.items.filter(i => st.dec[i.crit] === undefined).length} из ${a.items.length} критериев не выбрано` : acc === a.items.length ? "Апелляция будет принята полностью" : acc ? "Апелляция будет принята частично" : "Апелляция будет отклонена";
+      $("#dec", el).disabled = !all || st.comment.trim().length < 5;
+      $("#prev", el).textContent = !all ? `Выберите решение для всех пунктов` : acc === a.items.length ? "Будет принята полностью" : acc ? "Будет принята частично" : "Будет отклонена";
     };
     $$("[data-d]", el).forEach(b => b.onclick = () => { st.dec[b.dataset.d] = b.dataset.v === "1"; appealOne(el, ctx); });
-    const cm = $("#cm", el); cm.oninput = () => { st.comment = cm.value; };
+    const cm = $("#cm", el); cm.oninput = () => { st.comment = cm.value; prev(); };
     prev();
     $("#dec", el).onclick = ev => busy(ev.currentTarget, async () => {
       try {
         const r = await api(`/appeals/${id}/decide`, { body: { decisions: st.dec, comment: st.comment } });
-        toast(`Апелляция ${({ accepted: "принята", partial: "принята частично", rejected: "отклонена" })[r.status]}` + (r.before !== r.after ? `: ${fmt(r.before)} → ${fmt(r.after)}` : ""));
+        toast(`Апелляция ${({ accepted: "принята", partial: "принята частично", rejected: "отклонена" })[r.status]}` + (r.before !== r.after ? `: ${fmt(r.before)}  —  ${fmt(r.after)}` : ""));
         delete appealOne.st[id]; ctx.refresh(); await appealOne(el, ctx);
       } catch (x) { const er = $("#aerr", el); er.textContent = x.message; er.classList.remove("hidden"); }
     });
@@ -276,31 +304,48 @@ export async function calibration(el, ctx) {
   const st = calibration.st || (calibration.st = { crit: "" });
   const dis = st.crit ? c.disagreements.filter(d => d.crit === st.crit) : c.disagreements;
   const crit = Object.fromEntries((await rulesCache()).criteria.map(x => [x.id, x]));
-  el.innerHTML = ph("Калибровка модели", "Первые ответы модели против эталонной разметки QA на тех же диалогах. Правки после проверки сюда не входят — это честная точность модели до человека. Расхождения — материал для уточнения правил чек-листа.")
-    + `<div class="strip">${stat("Совпадение с эталоном", c.agreement != null ? String(c.agreement).replace(".", ",") + "%" : "—", `${c.answers} ответов по критериям`)}${stat("Средняя ошибка итога", c.mae != null ? fmt(c.mae) + " балла" : "—", `на ${c.dialogs} ${plural(c.dialogs, "диалоге", "диалогах", "диалогах")}`)}${stat("Расхождений", c.disagreements.length, `из них эталон под сомнением: ${c.disagreements.filter(d => d.unsure).length}`)}</div>`
-    + `<div class="cols w"><div class="sec"><h2>Совпадение по критериям</h2><div class="bars">${c.per.map(p => `<button class="bar" data-c="${p.crit}" aria-pressed="${st.crit === p.crit}" style="${st.crit === p.crit ? "background:var(--sunken)" : ""}"><span>${p.crit.slice(1)}. ${esc(p.name)}</span><span class="tr"><span class="fl ${p.rate >= 90 ? "l" : p.rate >= 75 ? "m" : ""}" style="width:${p.rate}%;display:block"></span></span><span class="n">${p.rate}%</span><span class="n muted">${p.ok}/${p.n}</span></button>`).join("")}</div>
-        <p class="sm muted" style="margin-top:8px">Нажмите на критерий, чтобы оставить только его расхождения.</p></div>
-      <div class="sec"><h2>Расхождения${st.crit ? ` · критерий ${st.crit.slice(1)}` : ""}</h2>${dis.length ? `<div class="tw"><table class="t"><thead><tr><th>Диалог</th><th>Критерий</th><th>Модель</th><th>Эталон</th></tr></thead><tbody>${dis.map(d => `<tr class="go" data-open="${esc(d.dialog)}"><td class="id">${esc(d.dialog)}</td><td>${d.crit.slice(1)}<span class="sub">${d.confidence != null ? "уверенность " + Math.round(d.confidence * 100) + "%" : ""}</span></td><td>${crit[d.crit] ? ansPill(crit[d.crit], d.ai) : esc(d.ai)}</td><td>${crit[d.crit] ? ansPill(crit[d.crit], d.gold) : esc(d.gold)}${d.unsure ? `<span class="sub">разметка под сомнением</span>` : ""}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">Расхождений нет.</p>`}</div></div>`;
+  el.innerHTML = ph("Проверка оценок ИИ", "Сравнение с предварительной разметкой. Текущий эталон подготовлен Claude и требует проверки командой.")
+    + `<div class="strip">${stat("Совпадение с разметкой", c.agreement != null ? String(c.agreement).replace(".", ",") + "%" : "—", `${c.answers} проверок критериев`)}${stat("Средняя погрешность (MAE)", c.mae != null ? fmt(c.mae) + " б." : "—", `на ${c.dialogs} ${plural(c.dialogs, "диалоге", "диалогах", "диалогах")}`)}${stat("Расхождений с эталоном", c.disagreements.length, `спорных в эталоне: ${c.disagreements.filter(d => d.unsure).length}`)}</div>`
+    + `<div class="cols w flush-cols">
+        <div class="col-pane" style="padding:0">
+          <div class="sec-hd">Совпадение по критериям (кликните для фильтрации)</div>
+          <div class="bars">${c.per.map(p => `<button class="bar ${st.crit === p.crit ? "on" : ""}" data-c="${p.crit}" aria-pressed="${st.crit === p.crit}"><span><b>#${p.crit.slice(1)}</b> ${esc(p.name)}</span><span class="tr"><span class="fl ${p.rate >= 90 ? "l" : p.rate >= 75 ? "m" : ""}" style="width:${p.rate}%;display:block"></span></span><span class="n">${p.rate}%</span><span class="n muted">${p.ok}/${p.n}</span></button>`).join("")}</div>
+        </div>
+        <div class="col-pane" style="padding:0">
+          <div class="sec-hd">Реестр расхождений${st.crit ? ` · пункт #${st.crit.slice(1)}` : ""}</div>
+          ${dis.length ? `<div class="tw"><table class="t"><thead><tr><th>Диалог</th><th>Пункт</th><th>Ответ ИИ</th><th>Предварительный эталон</th></tr></thead><tbody>${dis.map(d => `<tr class="go" data-open="${esc(d.dialog)}"><td class="id">${esc(d.dialog)}</td><td>#${d.crit.slice(1)}<span class="sub">${d.confidence != null ? Math.round(d.confidence * 100) + "%" : ""}</span></td><td>${crit[d.crit] ? ansPill(crit[d.crit], d.ai) : esc(d.ai)}</td><td>${crit[d.crit] ? ansPill(crit[d.crit], d.gold) : esc(d.gold)}${d.unsure ? `<span class="sub">спорный эталон</span>` : ""}</td></tr>`).join("")}</tbody></table></div>` : `<div style="padding:20px 28px" class="muted sm">Расхождений не обнаружено.</div>`}
+        </div>
+      </div>`;
   $$("[data-c]", el).forEach(b => b.onclick = () => { st.crit = st.crit === b.dataset.c ? "" : b.dataset.c; calibration(el, ctx); });
   bindOpen(el, ctx.go);
 }
 
-// ======================= обзор качества =======================
+// ======================= аналитика качества =======================
 export async function dashboard(el, ctx) {
   const o = await api("/stats/overview");
   if (!ctx.alive()) return;
   const st = dashboard.st || (dashboard.st = { open: null });
   const R = ctx.me.role, p = o.process, maxPts = Math.max(...o.loss.map(l => l.points), 0.01);
-  const toDialogs = q => (["dir"].includes(R) ? null : `dialogs/${q}`);
-  el.innerHTML = ph(R === "lead" ? `Где теряем качество · ${esc(ctx.me.team)}` : R === "dir" ? "Обзор качества" : "Где теряем качество", "Средний балл, грубые ошибки и критерии, на которых операторы теряют больше всего баллов. Считается по текущим оценкам; диалоги с неполной оценкой не входят.")
-    + `<div class="strip">${stat("Средний балл", fmt(o.avg), `${o.done} ${plural(o.done, "оценённый диалог", "оценённых диалога", "оценённых диалогов")}`)}${stat("Грубые ошибки", o.critical, o.done ? `${Math.round(o.critical / o.done * 100)}% диалогов` : "")}${stat("Охват оценкой", o.dialogs ? Math.round(o.evaluated / o.dialogs * 100) + "%" : "—", `${o.evaluated} из ${o.dialogs}`)}${stat("Стоимость на диалог", money(o.cost_per, 3), `${String(Math.round(o.sec * 10) / 10).replace(".", ",")} с · всего ${money(o.cost, 2)}`)}</div>`
-    + `<div class="cols w"><div class="sec"><h2>Потери баллов по критериям</h2><p class="sm muted" style="margin:-6px 0 10px">Сколько баллов в среднем теряет диалог на критерии · доля нарушений среди применимых.</p><div class="bars">
-        ${o.loss.map(l => `<button class="bar" data-l="${l.crit}" aria-expanded="${st.open === l.crit}"><span>${l.crit.slice(1)}. ${esc(l.name)}</span><span class="tr"><span class="fl ${l.points / maxPts > .6 ? "" : l.points / maxPts > .3 ? "m" : "l"}" style="width:${l.points / maxPts * 100}%;display:block"></span></span><span class="n">−${fmt(l.points)}</span><span class="n muted">${l.rate}%</span></button>
-          ${st.open === l.crit ? `<div class="box" style="margin:2px 0 8px">${l.examples.length ? l.examples.map(x => `<div class="sm"><a href="#/dialog/${esc(x.dialog)}">${esc(x.dialog)}</a> · ${esc((x.text || "").replace(/\[\d+\]/g, "").slice(0, 180))}</div>`).join("") : `<div class="sm muted">Нарушений нет.</div>`}
-            ${l.failed && toDialogs("") ? `<div><a class="btn sm" href="#/dialogs/failed=${l.crit}">Все ${l.failed} ${plural(l.failed, "диалог", "диалога", "диалогов")} с нарушением</a></div>` : ""}</div>` : ""}`).join("")}</div></div>
-      <div><div class="sec"><h2>По каналам и языкам</h2><div class="tw"><table class="t"><tbody>${o.segments.map(s => `<tr><td>${esc(s.name)}</td><td class="r muted num">${s.n}</td><td class="r"><span class="score ${scls(s.avg)}">${fmt(s.avg)}</span></td></tr>`).join("")}</tbody></table></div></div>
-        ${R !== "lead" ? `<div class="sec"><h2>По группам</h2><div class="tw"><table class="t"><tbody>${o.teams.map(t => `<tr ${toDialogs("") ? `class="go" data-team="${esc(t.name)}"` : ""}><td>${esc(t.name)}</td><td class="r muted num">${t.n}</td><td class="r">${t.critical ? pill("bad", t.critical + " груб.") : ""}</td><td class="r"><span class="score ${scls(t.avg)}">${fmt(t.avg)}</span></td></tr>`).join("")}</tbody></table></div></div>` : ""}
-        <div class="sec"><h2>Процесс проверки</h2><div class="kv"><span>Ждут проверки QA</span><b>${p.review}</b><span>Открытые апелляции</span><b>${p.appeal}</b><span>Не оценены</span><b>${p.new}</b><span>Сбой оценки</span><b>${p.error}</b><span>Правок QA в текущих оценках</span><b>${p.overrides}</b><span>Апелляций принято / отклонено</span><b>${p.won} / ${p.lost}</b></div></div></div></div>`;
+  const toDialogs = q => `dialogs/${q}`;
+  el.innerHTML = ph(R === "lead" ? `Аналитика группы · ${esc(ctx.me.team)}` : "Аналитика качества", "")
+    + `<div class="strip">${stat("Средний балл", fmt(o.avg), `${o.done} ${plural(o.done, "диалог", "диалога", "диалогов")}`)}${stat("Грубые ошибки (п.8)", o.critical, o.done ? `${Math.round(o.critical / o.done * 100)}% от проверенных` : "")}${stat("Покрытие оценкой", o.dialogs ? Math.round(o.evaluated / o.dialogs * 100) + "%" : "—", `${o.evaluated} из ${o.dialogs}`)}${stat("Стоимость оценки", money(o.cost_per, 3), `${String(Math.round(o.sec * 10) / 10).replace(".", ",")} с · всего ${money(o.cost, 2)}`)}</div>`
+    + `<div class="cols w flush-cols">
+        <div class="col-pane" style="padding:0">
+          <div class="sec-hd">Потери баллов по критериям (средний штраф и % нарушений)</div>
+          <div class="bars">
+            ${o.loss.map(l => `<button class="bar ${st.open === l.crit ? "on" : ""}" data-l="${l.crit}" aria-expanded="${st.open === l.crit}"><span><b>#${l.crit.slice(1)}</b> ${esc(l.name)}</span><span class="tr"><span class="fl ${l.points / maxPts > .6 ? "" : l.points / maxPts > .3 ? "m" : "l"}" style="width:${l.points / maxPts * 100}%;display:block"></span></span><span class="n">−${fmt(l.points)}</span><span class="n muted">${l.rate}%</span></button>
+              ${st.open === l.crit ? `<div class="bar-exp">${l.examples.length ? l.examples.map(x => `<div class="sm"><a href="#/dialog/${esc(x.dialog)}" class="mono">${esc(x.dialog)}</a> · ${esc((x.text || "").replace(/\[\d+\]/g, "").slice(0, 160))}</div>`).join("") : `<div class="sm muted">Нарушений нет.</div>`}
+                ${l.failed && toDialogs("") ? `<div style="margin-top:6px"><a class="btn sm" href="#/dialogs/failed=${l.crit}">Открыть все диалоги с ошибкой (${l.failed})</a></div>` : ""}</div>` : ""}`).join("")}
+          </div>
+        </div>
+        <div class="col-pane" style="padding:0">
+          <div class="sec-hd">Срез по каналам и языкам</div>
+          <div class="tw"><table class="t"><thead><tr><th>Сегмент</th><th class="r">Диалогов</th><th class="r">Средний балл</th></tr></thead><tbody>${o.segments.map(s => `<tr><td>${esc(s.name)}</td><td class="r muted num">${s.n}</td><td class="r"><span class="score ${scls(s.avg)}">${fmt(s.avg)}</span></td></tr>`).join("")}</tbody></table></div>
+          ${R !== "lead" ? `<div class="sec-hd">Срез по группам операторов</div><div class="tw"><table class="t"><thead><tr><th>Группа</th><th class="r">Диалогов</th><th>Риск</th><th class="r">Средний балл</th></tr></thead><tbody>${o.teams.map(t => `<tr ${toDialogs("") ? `class="go" data-team="${esc(t.name)}"` : ""}><td><b>${esc(t.name)}</b></td><td class="r muted num">${t.n}</td><td>${t.critical ? pill("bad", t.critical + " груб.") : '<span class="muted">—</span>'}</td><td class="r"><span class="score ${scls(t.avg)}">${fmt(t.avg)}</span></td></tr>`).join("")}</tbody></table></div>` : ""}
+          <div class="sec-hd">Состояние проверок</div>
+          <div class="kv" style="padding:14px 28px"><span>Ожидают проверки QA</span><b class="mono">${p.review}</b><span>Открытые апелляции</span><b class="mono">${p.appeal}</b><span>В очереди на оценку</span><b class="mono">${p.new}</b><span>Ручных правок QA</span><b class="mono">${p.overrides}</b><span>Апелляций принято / отклонено</span><b class="mono">${p.won} / ${p.lost}</b></div>
+        </div>
+      </div>`;
   $$("[data-l]", el).forEach(b => b.onclick = () => { st.open = st.open === b.dataset.l ? null : b.dataset.l; dashboard(el, ctx); });
   $$("[data-team]", el).forEach(r => r.onclick = () => ctx.go("dialogs/team=" + encodeURIComponent(r.dataset.team)));
 }
@@ -312,13 +357,16 @@ export async function team(el, ctx) {
   const R = ctx.me.role, ops = t.operators;
   const n = ops.reduce((s, o) => s + o.n, 0), cr = ops.reduce((s, o) => s + o.critical, 0);
   const all = ops.flatMap(o => o.avg != null ? Array(o.n).fill(o.avg) : []);
-  el.innerHTML = ph(R === "lead" ? `Моя группа · ${esc(t.team)}` : "Операторы", "Сначала операторы с самым низким средним баллом. Слабый критерий — тот, который оператор нарушает чаще всего: с него стоит начать разбор.")
-    + `<div class="strip">${stat("Операторов", ops.length)}${stat("Оценённых диалогов", n)}${stat("Средний балл", fmt(all.length ? all.reduce((a, b) => a + b, 0) / all.length : null))}${stat("Грубые ошибки", cr)}</div>`
-    + (ops.length ? `<div class="tw"><table class="t"><thead><tr><th>Оператор</th>${R !== "lead" ? "<th>Группа</th>" : ""}<th class="r">Диалогов</th><th class="r">Средний балл</th><th>Грубые</th><th>Слабый критерий</th><th>Апелляции</th></tr></thead><tbody>
-      ${ops.map(o => `<tr class="go" data-op="${esc(o.operator)}"><td><b style="font-weight:500">${esc(o.operator)}</b></td>${R !== "lead" ? `<td>${esc(o.team)}</td>` : ""}<td class="r num">${o.n}</td><td class="r"><span class="score ${scls(o.avg)}">${fmt(o.avg)}</span></td>
-        <td>${o.critical ? pill("bad", o.critical) : '<span class="muted">—</span>'}</td><td>${o.weak ? `${o.weak.crit.slice(1)}. ${esc(o.weak.name)} <span class="muted">· ${o.weak.n}</span>` : '<span class="muted">—</span>'}</td><td>${o.appeals ? pill("info", o.appeals + " открыто") : '<span class="muted">—</span>'}</td></tr>`).join("")}</tbody></table></div>`
-      : emptyBox("Оценённых диалогов нет", "Как только оценки будут опубликованы, здесь появится сводка по операторам."));
-  $$("[data-op]", el).forEach(r => r.onclick = () => ctx.go("dialogs/operator=" + encodeURIComponent(r.dataset.op)));
+  el.innerHTML = ph("Команда", R === "lead" ? esc(t.team) : "")
+    + `<div class="strip">${stat("Операторов", ops.length)}${stat("Проверено диалогов", n)}${stat("Средний балл", fmt(all.length ? all.reduce((a, b) => a + b, 0) / all.length : null))}${stat("Грубые ошибки", cr)}</div>`
+    + (ops.length ? `<div class="tw"><table class="t"><thead><tr><th>Оператор</th>${R !== "lead" ? "<th>Группа</th>" : ""}<th class="r">Диалогов</th><th class="r">Средний балл</th><th>Грубые ошибки</th><th>Зона внимания</th><th>Апелляции</th><th class="r">Действие</th></tr></thead><tbody>
+      ${ops.map(o => `<tr class="go" data-op="${esc(o.operator)}"><td><b style="font-weight:600">${esc(o.operator)}</b></td>${R !== "lead" ? `<td>${esc(o.team)}</td>` : ""}<td class="r num">${o.n}</td><td class="r"><span class="score ${scls(o.avg)}">${fmt(o.avg)}</span></td>
+        <td>${o.critical ? pill("bad", o.critical) : '<span class="muted">—</span>'}</td><td>${o.weak ? `<b>#${o.weak.crit.slice(1)} ${esc(o.weak.name)}</b> <span class="muted">(${o.weak.n} наруш.)</span>` : '<span class="muted">Без ошибок</span>'}</td><td>${o.appeals ? pill("info", o.appeals + " спор.") : '<span class="muted">—</span>'}</td>
+        <td class="r">${o.weak ? `<button type="button" class="btn sm" data-coach-op="${esc(o.operator)}" data-coach-crit="${o.weak.crit}">Разбор ошибок</button>` : `<button type="button" class="btn sm link" data-op-btn="${esc(o.operator)}">Все диалоги</button>`}</td></tr>`).join("")}</tbody></table></div>`
+      : emptyBox("Нет данных по операторам", "Опубликованные оценки пока отсутствуют."));
+  $$("[data-op]", el).forEach(r => r.onclick = e => { if (e.target.closest("button")) return; ctx.go("dialogs/operator=" + encodeURIComponent(r.dataset.op)); });
+  $$("[data-op-btn]", el).forEach(b => b.onclick = () => ctx.go("dialogs/operator=" + encodeURIComponent(b.dataset.opBtn)));
+  $$("[data-coach-op]", el).forEach(b => b.onclick = () => ctx.go(`dialogs/operator=${encodeURIComponent(b.dataset.coachOp)}&failed=${b.dataset.coachCrit}`));
 }
 
 // ======================= мои диалоги (оператор) =======================
@@ -326,11 +374,10 @@ export async function my(el, ctx) {
   const [s, list] = await Promise.all([api("/stats/me"), api("/dialogs")]);
   if (!ctx.alive()) return;
   const fresh = list.filter(d => d.wf_status === "published"), rest = list.filter(d => d.wf_status !== "published");
-  el.innerHTML = ph(`Здравствуйте, ${esc(ctx.me.name.split(" ")[0])}`, "Оценки ваших диалогов после проверки QA. У каждого балла есть объяснение и ссылка на реплику. Не согласны — откройте диалог и подайте апелляцию по конкретному критерию.")
-    + `<div class="strip">${stat("Средний балл", fmt(s.avg), `${s.n} ${plural(s.n, "оценка", "оценки", "оценок")}`)}${stat("Новых оценок", s.new, s.new ? "ждут ознакомления" : "")}${stat("Чаще всего теряете", s.weak ? `${s.weak.crit.slice(1)}. ${esc(s.weak.name)}` : "—", s.weak ? `${s.weak.n} ${plural(s.weak.n, "раз", "раза", "раз")}` : "", true)}${stat("Апелляции", s.appeals.n, s.appeals.open ? `${s.appeals.open} на рассмотрении` : "")}</div>`
-    + (fresh.length ? `<div class="sec"><h2>Новые оценки</h2>${dialogTable(fresh)}</div>` : "")
-    + `<div class="sec"><h2>${fresh.length ? "Ранее" : "Все оценки"}</h2>${dialogTable(rest, { emptyT: "Оценок пока нет", emptyP: "Оценка появится здесь после того, как QA-специалист проверит диалог. Придёт уведомление." })}</div>`
-    + (s.weak ? `<p class="sm muted">Как оценивается критерий «${esc(s.weak.name)}» — в разделе <a href="#/rules">Как меня оценивают</a>.</p>` : "");
+  el.innerHTML = ph("Мои оценки", "", `<a class="btn sm" href="#/rules">Стандарты оценки</a>`)
+    + `<div class="strip">${stat("Мой средний балл", fmt(s.avg), `${s.n} ${plural(s.n, "проверка", "проверки", "проверок")}`)}${stat("Ждут ознакомления", s.new)}${stat("Зона внимания", s.weak ? `#${s.weak.crit.slice(1)} ${esc(s.weak.name)}` : "Без ошибок", s.weak ? `${s.weak.n} ${plural(s.weak.n, "замечание", "замечания", "замечаний")}` : "", true)}${stat("Мои апелляции", s.appeals.n, s.appeals.open ? `${s.appeals.open} на рассмотрении` : "")}</div>`
+    + (fresh.length ? `<div class="sec-hd">Требуют ознакомления (${fresh.length})</div>${dialogTable(fresh, { own: true })}` : "")
+    + (rest.length || !fresh.length ? `<div class="sec-hd">${fresh.length ? "Просмотренные диалоги" : "Все проверенные диалоги"}</div>${dialogTable(rest, { own: true, emptyT: "Оценок пока нет", emptyP: "Проверенные диалоги появятся здесь после публикации QA." })}` : "");
   bindOpen(el, ctx.go);
 }
 
@@ -340,18 +387,18 @@ export async function users(el, ctx) {
   if (!ctx.alive()) return;
   const st = users.st || (users.st = { q: "", add: false, pw: null });
   const rows = list.filter(u => !st.q || (u.name + u.login).toLowerCase().includes(st.q.toLowerCase()));
-  const roleSel = (id, cur) => `<select class="f" data-role="${id}" style="width:auto;height:30px;padding:0 6px" aria-label="Роль">${Object.entries(ROLE).map(([k, v]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${v}</option>`).join("")}</select>`;
-  const teamSel = (id, cur) => `<select class="f" data-team="${id}" style="width:auto;height:30px;padding:0 6px" aria-label="Группа"><option value="">—</option>${teams.map(t => `<option ${t === cur ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>`;
-  el.innerHTML = ph("Пользователи", "Роль определяет, что человек видит и может менять. Оператор видит только свои диалоги, руководитель группы — свою группу. В рабочей версии роли приходят из групп Active Directory.", `<button class="btn pri" id="add">Добавить пользователя</button>`)
-    + (st.pw ? `<div class="note ok" style="margin-bottom:16px">Пользователь <b>${esc(st.pw.login)}</b> создан. Временный пароль: <code>${esc(st.pw.password)}</code> — передайте его лично, повторно он не показывается.</div>` : "")
-    + (st.add ? `<form class="panel" id="uf" style="margin-bottom:16px"><div class="cols" style="grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
-        <div><label class="l" for="ul">Логин</label><input class="f" id="ul" required placeholder="a.nurlanova"></div><div><label class="l" for="un">Имя</label><input class="f" id="un" required></div>
-        <div><label class="l" for="ur">Роль</label><select class="f" id="ur">${Object.entries(ROLE).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
-        <div><label class="l" for="ut">Группа</label><select class="f" id="ut"><option value="">—</option>${teams.map(t => `<option>${esc(t)}</option>`).join("")}</select></div></div>
-        <div class="err hidden" id="uerr" role="alert"></div><div class="acts" style="margin-top:12px"><button class="btn pri" type="submit">Создать</button><button class="btn" type="button" id="ucancel">Отмена</button></div></form>` : "")
-    + `<div class="filters"><input type="search" id="q" placeholder="Имя или логин" value="${esc(st.q)}" aria-label="Поиск пользователя"><span class="sm muted">${rows.length} из ${list.length}</span></div>`
-    + `<div class="tw"><table class="t"><thead><tr><th>Имя</th><th>Логин</th><th>Роль</th><th>Группа</th><th>Доступ</th></tr></thead><tbody>${rows.map(u => `<tr class="${u.active ? "" : "muted"}"><td>${esc(u.name)}${u.id === ctx.me.id ? ' <span class="sub">это вы</span>' : ""}</td><td class="num">${esc(u.login)}</td><td>${roleSel(u.id, u.role)}</td><td>${teamSel(u.id, u.team)}</td>
-      <td><label class="chk"><input type="checkbox" data-act="${u.id}" ${u.active ? "checked" : ""} ${u.id === ctx.me.id ? "disabled" : ""}> ${u.active ? "активен" : "заблокирован"}</label></td></tr>`).join("")}</tbody></table></div>`;
+  const roleSel = (id, cur) => `<select class="f sm" data-role="${id}" style="width:auto" aria-label="Роль">${Object.entries(ROLE).map(([k, v]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${v}</option>`).join("")}</select>`;
+  const teamSel = (id, cur) => `<select class="f sm" data-team="${id}" style="width:auto" aria-label="Группа"><option value="">—</option>${teams.map(t => `<option ${t === cur ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>`;
+  el.innerHTML = ph("Пользователи", "", `<button class="btn pri sm" id="add">Добавить сотрудника</button>`)
+    + (st.pw ? `<div class="sc-strip ok" style="padding:10px 28px">Создан аккаунт <b>${esc(st.pw.login)}</b> · Временный пароль: <code>${esc(st.pw.password)}</code></div>` : "")
+    + (st.add ? `<form class="sc-strip info" id="uf" style="padding:14px 28px"><div class="cols" style="grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;border:0">
+        <div><label class="l" for="ul" style="margin-top:0">Логин</label><input class="f sm" id="ul" required placeholder="a.nurlanova"></div><div><label class="l" for="un" style="margin-top:0">ФИО</label><input class="f sm" id="un" required></div>
+        <div><label class="l" for="ur" style="margin-top:0">Роль</label><select class="f sm" id="ur">${Object.entries(ROLE).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
+        <div><label class="l" for="ut" style="margin-top:0">Группа</label><select class="f sm" id="ut"><option value="">—</option>${teams.map(t => `<option>${esc(t)}</option>`).join("")}</select></div></div>
+        <div class="err hidden" id="uerr" role="alert"></div><div class="acts" style="margin-top:10px"><button class="btn pri sm" type="submit">Создать</button><button class="btn sm" type="button" id="ucancel">Отмена</button></div></form>` : "")
+    + `<div class="filters"><input type="search" id="q" placeholder="Поиск по имени или логину…" value="${esc(st.q)}" aria-label="Поиск пользователя"><span class="sm muted">${rows.length} из ${list.length}</span></div>`
+    + `<div class="tw"><table class="t"><thead><tr><th>Сотрудник</th><th>Логин</th><th>Роль</th><th>Группа</th><th>Статус</th></tr></thead><tbody>${rows.map(u => `<tr class="${u.active ? "" : "muted"}"><td><b>${esc(u.name)}</b>${u.id === ctx.me.id ? ' <span class="sub">текущий сеанс</span>' : ""}</td><td class="num">${esc(u.login)}</td><td>${roleSel(u.id, u.role)}</td><td>${teamSel(u.id, u.team)}</td>
+      <td><label class="chk sm"><input type="checkbox" data-act="${u.id}" ${u.active ? "checked" : ""} ${u.id === ctx.me.id ? "disabled" : ""}> ${u.active ? "Активен" : "Отключён"}</label></td></tr>`).join("")}</tbody></table></div>`;
   const re = () => users(el, ctx);
   $("#add", el).onclick = () => { st.add = !st.add; st.pw = null; re().then(() => $("#ul", el)?.focus()); };
   let t; $("#q", el).oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value; re().then(() => { const q = $("#q", el); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }); }, 250); };
@@ -370,31 +417,29 @@ export async function users(el, ctx) {
   }
 }
 
-// ======================= настройки модели =======================
+// ======================= параметры модели =======================
 export async function settings(el, ctx) {
   const s = await api("/settings");
   if (!ctx.alive()) return;
   const can = ctx.me.role === "adm";
   const st = { model: s.model, conf: s.conf, sample: s.sample, budget: s.budget };
   const draw = () => {
-    el.innerHTML = ph("Модель и оценка", "Параметры, с которыми модель оценивает новые диалоги. Смена модели или промпта — это новая версия оценки: прошлые результаты остаются в истории с паспортом, по которому их можно воспроизвести.")
-      + `<div class="cols w"><div class="panel">
-        <label class="l" style="margin-top:0">Модель</label><div class="seg" role="group" aria-label="Модель">${[["sonnet", "Sonnet 5.5 · точнее"], ["haiku", "Haiku 5.5 · дешевле"]].map(([k, t]) => `<button data-m="${k}" class="${st.model === k ? "on" : ""}" ${can ? "" : "disabled"}>${t}</button>`).join("")}</div>
-        <p class="sm muted" style="margin-top:6px">Sonnet на эталоне совпадает с QA чаще; Haiku примерно втрое дешевле и годится для массовой предварительной проверки.</p>
-        <label class="l" for="conf">Порог уверенности: <b id="cv">${Math.round(st.conf * 100)}%</b></label><input type="range" id="conf" min="0.5" max="0.95" step="0.05" value="${st.conf}" style="width:100%" ${can ? "" : "disabled"}>
-        <p class="sm muted">Ответы с уверенностью ниже порога уходят в очередь проверки с причиной «Модель не уверена».</p>
-        <label class="l" for="smp">Случайная выборка на контроль, % диалогов</label><input class="f" type="number" id="smp" min="0" max="20" value="${st.sample}" style="width:120px" ${can ? "" : "disabled"}>
-        <p class="sm muted" style="margin-top:6px">Даже уверенные оценки иногда проверяет человек — так видно, если модель начала ошибаться.</p>
-        <label class="l" for="bud">Лимит расходов на один пакет, $</label><input class="f" type="number" id="bud" min="1" max="100" step="1" value="${st.budget}" style="width:120px" ${can ? "" : "disabled"}>
-        ${can ? `<div class="acts" style="margin-top:var(--s-lg)"><button class="btn pri" id="save">Сохранить</button></div>` : `<p class="note" style="margin-top:var(--s-lg)">Менять параметры может администратор.</p>`}</div>
-        <div class="panel"><h3>Паспорт оценки</h3><div class="kv" style="margin-top:10px"><span>Модель</span><b>${esc(s.models[s.model])}</b><span>Версия промпта</span><b><code>${esc(s.prompt_hash)}</code></b><span>Потрачено всего</span><b>${money(s.spent, 2)}</b><span>Чек-лист</span><b>«${esc(ctx.me.checklist.name)}» v${ctx.me.checklist.version}</b></div>
-          <p class="sm muted" style="margin-top:12px">Ключ API хранится на сервере в переменной окружения и в интерфейс не передаётся. Транскрипты уходят только в выбранную модель; персональные данные в чатах уже маскированы.</p></div></div>`;
+    el.innerHTML = ph("Настройки оценки", "Выберите модель и условия передачи оценки человеку. Изменения действуют для новых запусков.")
+      + `<div class="cols w flush-cols"><div class="col-pane">
+        <label class="l" style="margin-top:0">Модель оценки</label><div class="seg" role="group" aria-label="Модель">${[["sonnet", "Claude Sonnet 5.5"], ["haiku", "Claude Haiku 5.5"]].map(([k, t]) => `<button data-m="${k}" class="${st.model === k ? "on" : ""}" ${can ? "" : "disabled"}>${t}</button>`).join("")}</div>
+        <p class="sm muted" style="margin-top:6px">Расход зависит от длины разговора, модели и повторных запросов.</p>
+        <label class="l" for="conf">Порог направления на ручную проверку: <b class="mono" id="cv">${Math.round(st.conf * 100)}%</b></label><input type="range" id="conf" min="0.5" max="0.95" step="0.05" value="${st.conf}" style="width:100%;max-width:360px" ${can ? "" : "disabled"}>
+        <p class="sm muted">При уверенности ниже порога диалог направляется в «Очередь разбора».</p>
+        <label class="l" for="smp">Контрольная случайная выборка (Sampling), %</label><input class="f sm mono" type="number" id="smp" min="0" max="20" value="${st.sample}" style="width:100px" ${can ? "" : "disabled"}>
+        <label class="l" for="bud">Общий лимит расходов на оценку, $</label><input class="f sm mono" type="number" id="bud" min="1" max="100" step="1" value="${st.budget}" style="width:100px" ${can ? "" : "disabled"}>
+        ${can ? `<div class="acts" style="margin-top:18px"><button class="btn pri sm" id="save">Сохранить параметры</button></div>` : `<p class="sm muted" style="margin-top:16px">Только для чтения (требуется роль Администратора).</p>`}</div>
+        <div class="col-pane"><h3>Текущее состояние</h3><div class="kv" style="margin-top:12px"><span>Активная модель</span><b>${esc(s.models[s.model])}</b><span>Хэш системного промпта</span><b><code>${esc(s.prompt_hash)}</code></b><span>Израсходовано всего</span><b class="mono">${money(s.spent, 2)}</b><span>Активный стандарт</span><b>«${esc(ctx.me.checklist.name)}» v${ctx.me.checklist.version}</b></div></div></div>`;
     if (!can) return;
     $$("[data-m]", el).forEach(b => b.onclick = () => { st.model = b.dataset.m; draw(); });
     $("#conf", el).oninput = e => { st.conf = +e.target.value; $("#cv", el).textContent = Math.round(st.conf * 100) + "%"; };
     $("#smp", el).oninput = e => { st.sample = +e.target.value; };
     $("#bud", el).oninput = e => { st.budget = +e.target.value; };
-    $("#save", el).onclick = e => busy(e.currentTarget, async () => { await api("/settings", { method: "PUT", body: st }); toast("Настройки сохранены. Они действуют для новых оценок"); ctx.refresh(); settings(el, ctx); });
+    $("#save", el).onclick = e => busy(e.currentTarget, async () => { await api("/settings", { method: "PUT", body: st }); toast("Параметры сохранены"); ctx.refresh(); settings(el, ctx); });
   };
   draw();
 }
@@ -404,16 +449,16 @@ export async function audit(el, ctx) {
   const st = audit.st || (audit.st = { q: "" });
   const rows = await api("/audit?q=" + encodeURIComponent(st.q));
   if (!ctx.alive()) return;
-  el.innerHTML = ph("Журнал действий", "Кто, когда и что сделал: входы, правки оценок, решения по апелляциям, публикация чек-листов, выгрузки. Записи только добавляются — изменить или удалить их нельзя.")
-    + `<div class="filters"><input type="search" id="q" placeholder="Действие, объект или сотрудник" value="${esc(st.q)}" aria-label="Поиск в журнале"><span class="sm muted">${rows.length} ${plural(rows.length, "запись", "записи", "записей")}${rows.length === 300 ? " · показаны последние 300" : ""}</span></div>`
-    + (rows.length ? `<div class="tw"><table class="t"><thead><tr><th>Когда</th><th>Кто</th><th>Действие</th><th>Объект</th><th>Подробности</th></tr></thead><tbody>${rows.map(a => `<tr><td class="muted num" style="white-space:nowrap">${dt(a.at)}</td><td>${esc(a.who || "система")}<span class="sub">${ROLE[a.role] || ""}</span></td><td>${esc(a.action)}</td>
-        <td class="id">${a.object && /^[\w-]+-\d+$|^p\d|^new-/.test(a.object) ? `<a href="#/dialog/${esc(a.object)}">${esc(a.object)}</a>` : esc(a.object || "")}</td><td class="sm muted wrap">${a.details ? esc(fmtDetails(a.details)) : ""}</td></tr>`).join("")}</tbody></table></div>` : emptyBox("Ничего не найдено", "Измените запрос."));
+  el.innerHTML = ph("История действий", "")
+    + `<div class="filters"><input type="search" id="q" placeholder="Фильтр по событию, объекту или сотруднику…" value="${esc(st.q)}" aria-label="Поиск в журнале"><span class="sm muted">${rows.length} ${plural(rows.length, "событие", "события", "событий")}</span></div>`
+    + (rows.length ? `<div class="tw"><table class="t"><thead><tr><th>Время</th><th>Субъект</th><th>Событие</th><th>Объект</th><th>Детализация</th></tr></thead><tbody>${rows.map(a => `<tr><td class="muted num" style="white-space:nowrap">${dt(a.at)}</td><td><b>${esc(a.who || "система")}</b><span class="sub">${ROLE[a.role] || ""}</span></td><td>${esc(a.action)}</td>
+        <td class="id">${a.object && /^[\w-]+-\d+$|^p\d|^new-/.test(a.object) ? `<a href="#/dialog/${esc(a.object)}">${esc(a.object)}</a>` : esc(a.object || "—")}</td><td class="sm muted wrap">${a.details ? esc(fmtDetails(a.details)) : ""}</td></tr>`).join("")}</tbody></table></div>` : emptyBox("Записей не найдено", "Измените поисковый запрос."));
   let t; $("#q", el).oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value; audit(el, ctx).then(() => { const q = $("#q", el); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }); }, 300); };
 }
 function fmtDetails(d) {
   if (typeof d !== "object") return String(d);
-  if (d.from !== undefined) return `${d.from} → ${d.to}. ${d.reason || ""}`;
-  if (d.before !== undefined) return `${fmt(d.before)} → ${fmt(d.after)}`;
-  if (d.changes) return d.changes.map(c => `${c.crit.slice(1)}: ${({ added: "добавлен", removed: "удалён", weight: `вес ${c.before}→${c.after}`, semantic: "изменён смысл", section: "раздел" })[c.kind]}`).join(", ");
+  if (d.from !== undefined) return `${d.from}  —  ${d.to}. ${d.reason || ""}`;
+  if (d.before !== undefined) return `${fmt(d.before)}  —  ${fmt(d.after)}`;
+  if (d.changes) return d.changes.map(c => `#${c.crit.slice(1)}: ${({ added: "добавлен", removed: "удалён", weight: `вес ${c.before} — ${c.after}`, semantic: "изменён смысл", section: "раздел" })[c.kind]}`).join(", ");
   return Object.entries(d).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.length : typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ");
 }

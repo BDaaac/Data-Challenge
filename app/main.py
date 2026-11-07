@@ -21,9 +21,11 @@ async def lifespan(_app):
 
 
 app = FastAPI(title="CQA Freedom", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
+from .lead import router as lead_router
+app.include_router(lead_router)
 WEB = ROOT / "web"
-STAFF_ALL = ("qa", "head", "lead", "dir", "comp", "adm")
-REVIEWERS = ("qa", "head")
+STAFF_ALL = ("qa", "lead", "adm")
+REVIEWERS = ("qa",)
 SPEAKERS = {"клиент": "client", "client": "client", "customer": "client", "клиент:": "client", "оператор": "operator",
             "operator": "operator", "agent": "operator", "агент": "operator", "бот": "bot", "bot": "bot", "aim": "bot",
             "система": "system", "system": "system"}
@@ -69,6 +71,8 @@ def login(response: Response, body: dict = Body(...)):
 
 
 def _start(response, u):
+    if u["role"] not in auth.ACTIVE_ROLES:
+        bad("Эта роль больше не используется. Обратитесь к администратору.", 403)
     tok = auth.create_session(u["id"])
     response.set_cookie(COOKIE, tok, httponly=True, samesite="lax", max_age=12 * 3600)
     engine.audit(u["id"], "Вход в систему")
@@ -86,7 +90,7 @@ def demo_users():
                        WHERE d.operator=users.name AND d.wf_status IN ('published','acknowledged','revised') AND e.total < 100) DESC,
                      (SELECT count(*) FROM dialogs d WHERE d.operator=users.name
                        AND d.wf_status IN ('published','acknowledged','revised','appeal')) DESC, id""")
-    return {"enabled": True, "users": rows}
+    return {"enabled": True, "users": [u for u in rows if u["role"] in auth.ACTIVE_ROLES]}
 
 
 @app.post("/api/auth/demo/{uid}")
@@ -279,7 +283,7 @@ def check_record(r, n):
 
 
 @app.post("/api/dialogs")
-def upload(body: dict = Body(...), u=Depends(roles("qa", "head", "adm"))):
+def upload(body: dict = Body(...), u=Depends(roles("qa", "adm"))):
     """Загрузка: {records:[...]} в формате выгрузки, либо {text, channel?, language?}."""
     if body.get("text") is not None:
         tr, errs = parse_text(body["text"])
@@ -329,7 +333,7 @@ def upload(body: dict = Body(...), u=Depends(roles("qa", "head", "adm"))):
 
 
 @app.post("/api/evaluate")
-def evaluate(body: dict = Body(...), u=Depends(roles("qa", "head", "adm"))):
+def evaluate(body: dict = Body(...), u=Depends(roles("qa", "adm"))):
     ids = [i for i in body.get("dialog_ids", []) if one("SELECT 1 AS x FROM dialogs WHERE id=%s", i)]
     if not ids:
         bad("Не выбрано ни одного диалога", 422)
@@ -338,12 +342,12 @@ def evaluate(body: dict = Body(...), u=Depends(roles("qa", "head", "adm"))):
 
 
 @app.get("/api/jobs")
-def jobs(u=Depends(roles("qa", "head", "adm"))):
+def jobs(u=Depends(roles("qa", "adm"))):
     return all_("SELECT j.*, us.name AS who FROM jobs j LEFT JOIN users us ON us.id=j.created_by ORDER BY id DESC LIMIT 30")
 
 
 @app.get("/api/jobs/{jid}")
-def job(jid: int, u=Depends(roles("qa", "head", "adm"))):
+def job(jid: int, u=Depends(roles("qa", "adm"))):
     j = one("SELECT * FROM jobs WHERE id=%s", jid) or bad("Пакет не найден", 404)
     rows = all_("""SELECT e.id, e.dialog_id, e.status, e.total, e.critical, e.review, e.calls, e.cost, e.seconds, e.trigger, d.wf_status,
                      (SELECT jsonb_agg(jsonb_build_object('crit', crit_id, 'status', status, 'source', source, 'low', flags ? 'low_conf') ORDER BY crit_id)
@@ -413,7 +417,7 @@ def confirm(did: str, u=Depends(roles(*REVIEWERS))):
     engine.audit(u["id"], "Подтвердил оценку", did, {"total": float(e["total"]) if e["total"] is not None else None})
     engine.notify(f"Новая оценка {did}: {fmt(e['total'])}", f"dialog/{did}", user_ids=[engine.operator_user(d["operator"])])
     if e["critical"]:
-        engine.notify(f"Подтверждена грубая ошибка: {did} ({d['operator']})", f"dialog/{did}", roles=("comp", "lead"), team=d["team"])
+        engine.notify(f"Подтверждена грубая ошибка: {did} ({d['operator']})", f"dialog/{did}", roles=("qa", "lead"), team=d["team"])
     nxt = one("SELECT id FROM dialogs WHERE wf_status='review' AND id<>%s ORDER BY occurred_at LIMIT 1", did)
     return {"next": nxt["id"] if nxt else None}
 
@@ -556,7 +560,7 @@ def violations(status: str = "open", u=Depends(roles(*STAFF_ALL))):
 
 
 @app.patch("/api/violations/{did}")
-def set_violation(did: str, body: dict = Body(...), u=Depends(roles("comp", "head"))):
+def set_violation(did: str, body: dict = Body(...), u=Depends(roles("qa"))):
     st = body.get("status")
     if st not in ("new", "work", "closed"):
         bad("Статус: new, work или closed", 422)
@@ -650,7 +654,7 @@ def diff(draft):
 
 
 @app.post("/api/checklists/draft")
-def new_draft(u=Depends(roles("head", "qa"))):
+def new_draft(u=Depends(roles("qa"))):
     if one("SELECT id FROM checklists WHERE status='draft'"):
         bad("Черновик уже есть. Продолжите его или удалите", 409)
     act = engine.active_checklist()
@@ -662,7 +666,7 @@ def new_draft(u=Depends(roles("head", "qa"))):
 
 
 @app.put("/api/checklists/{cid}")
-def save_draft(cid: int, body: dict = Body(...), u=Depends(roles("head", "qa"))):
+def save_draft(cid: int, body: dict = Body(...), u=Depends(roles("qa"))):
     c = engine.checklist(cid) or bad("Версия не найдена", 404)
     if c["status"] != "draft":
         bad("Опубликованную версию менять нельзя: создайте черновик", 409)
@@ -695,7 +699,7 @@ def save_draft(cid: int, body: dict = Body(...), u=Depends(roles("head", "qa")))
 
 
 @app.delete("/api/checklists/{cid}")
-def drop_draft(cid: int, u=Depends(roles("head", "qa"))):
+def drop_draft(cid: int, u=Depends(roles("qa"))):
     c = engine.checklist(cid) or bad("Версия не найдена", 404)
     if c["status"] != "draft":
         bad("Удалить можно только черновик", 409)
@@ -705,7 +709,7 @@ def drop_draft(cid: int, u=Depends(roles("head", "qa"))):
 
 
 @app.post("/api/checklists/{cid}/trial")
-def trial(cid: int, body: dict = Body(...), u=Depends(roles("head", "qa"))):
+def trial(cid: int, body: dict = Body(...), u=Depends(roles("qa"))):
     """Пробный прогон изменённых критериев черновика на нескольких диалогах. В оценки не сохраняется."""
     c = engine.checklist(cid) or bad("Версия не найдена", 404)
     crits = [x for x in c["criteria"] if x["id"] in (body.get("crits") or [])]
@@ -739,7 +743,7 @@ def trial(cid: int, body: dict = Body(...), u=Depends(roles("head", "qa"))):
 
 
 @app.post("/api/checklists/{cid}/publish")
-def publish(cid: int, body: dict = Body(default={}), u=Depends(roles("head"))):
+def publish(cid: int, body: dict = Body(default={}), u=Depends(roles("qa"))):
     c = engine.checklist(cid) or bad("Версия не найдена", 404)
     if c["status"] != "draft":
         bad("Публикуется только черновик", 409)
@@ -757,7 +761,7 @@ def publish(cid: int, body: dict = Body(default={}), u=Depends(roles("head"))):
 
 
 @app.post("/api/checklists/{cid}/apply")
-def apply(cid: int, u=Depends(roles("head", "qa"))):
+def apply(cid: int, u=Depends(roles("qa"))):
     """Применить активную версию к уже оценённым диалогам: веса — пересчёт, изменённый смысл — модель только для этих критериев."""
     c = engine.checklist(cid)
     if not c or c["status"] != "published":
@@ -784,7 +788,7 @@ def avg(xs):
 
 
 @app.get("/api/stats/overview")
-def overview(u=Depends(roles("head", "dir", "lead", "qa", "comp"))):
+def overview(u=Depends(roles("lead", "qa"))):
     rows = current_rows(u)
     crit = engine.active_checklist()["criteria"]
     ids = [r["eval_id"] for r in rows]
@@ -832,7 +836,7 @@ def overview(u=Depends(roles("head", "dir", "lead", "qa", "comp"))):
 
 
 @app.get("/api/stats/team")
-def team_stats(u=Depends(roles("lead", "head", "qa"))):
+def team_stats(u=Depends(roles("lead", "qa"))):
     rows = current_rows(u)
     crit = [c for c in engine.active_checklist()["criteria"] if c["type"] != "flag"]
     ids = [r["eval_id"] for r in rows]
@@ -873,7 +877,7 @@ def my_stats(u=Depends(roles("op"))):
 
 
 @app.get("/api/calibration")
-def calibration(u=Depends(roles("qa", "head"))):
+def calibration(u=Depends(roles("qa"))):
     """Ответы модели (первая оценка) против эталонной разметки."""
     gold = all_("SELECT * FROM gold")
     crit = {c["id"]: c for c in engine.active_checklist()["criteria"]}
@@ -909,7 +913,7 @@ def calibration(u=Depends(roles("qa", "head"))):
 # ======================= администрирование =======================
 @app.get("/api/users")
 def users(u=Depends(roles("adm"))):
-    return all_("SELECT id, login, name, role, team, active, created_at FROM users ORDER BY role, name")
+    return all_("SELECT id, login, name, role, team, active, created_at FROM users WHERE role = ANY(%s) ORDER BY role, name", list(auth.ACTIVE_ROLES))
 
 
 @app.patch("/api/users/{uid}")
@@ -918,7 +922,7 @@ def user_upd(uid: int, body: dict = Body(...), u=Depends(roles("adm"))):
     if uid == u["id"] and (body.get("active") is False or body.get("role", "adm") != "adm"):
         bad("Нельзя заблокировать себя или снять с себя роль администратора", 409)
     role, active, team = body.get("role", t["role"]), body.get("active", t["active"]), body.get("team", t["team"])
-    if role not in ("qa", "op", "lead", "head", "dir", "comp", "adm"):
+    if role not in auth.ACTIVE_ROLES:
         bad("Неизвестная роль", 422)
     run("UPDATE users SET role=%s, active=%s, team=%s WHERE id=%s", role, active, team, uid)
     if not active:
@@ -932,7 +936,7 @@ def user_add(body: dict = Body(...), u=Depends(roles("adm"))):
     lg, name, role = str(body.get("login", "")).strip().lower(), str(body.get("name", "")).strip(), body.get("role")
     if not re.fullmatch(r"[a-z0-9._-]{2,32}", lg):
         bad("Логин: латиница, цифры, точка, дефис", 422)
-    if not name or role not in ("qa", "op", "lead", "head", "dir", "comp", "adm"):
+    if not name or role not in auth.ACTIVE_ROLES:
         bad("Укажите имя и роль", 422)
     if one("SELECT 1 AS x FROM users WHERE login=%s", lg):
         bad("Такой логин уже есть", 409)
@@ -943,7 +947,7 @@ def user_add(body: dict = Body(...), u=Depends(roles("adm"))):
 
 
 @app.get("/api/settings")
-def settings_get(u=Depends(roles("adm", "head"))):
+def settings_get(u=Depends(roles("adm"))):
     spent = one("SELECT coalesce(sum(cost),0) AS s FROM evaluations")["s"]
     return {k: engine.setting(k) for k in engine.DEFAULTS} | {"spent": float(spent), "models": engine.MODELS, "prompt_hash": engine.PROMPT_HASH}
 
@@ -968,7 +972,7 @@ def settings_put(body: dict = Body(...), u=Depends(roles("adm"))):
 
 
 @app.get("/api/audit")
-def audit_log(q: str = "", u=Depends(roles("adm", "head", "comp"))):
+def audit_log(q: str = "", u=Depends(roles("adm"))):
     return all_("""SELECT a.at, a.action, a.object, a.details, us.name AS who, us.role FROM audit a LEFT JOIN users us ON us.id=a.user_id
                    WHERE (%s='' OR a.action ILIKE %s OR a.object ILIKE %s OR us.name ILIKE %s) ORDER BY a.id DESC LIMIT 300""",
                 q, f"%{q}%", f"%{q}%", f"%{q}%")
@@ -992,7 +996,7 @@ def teams(u=Depends(current_user)):
 
 # ---------- выгрузка ----------
 @app.get("/api/export/results.json")
-def export_json(source: str = "", ids: str = "", u=Depends(roles("qa", "head", "adm"))):
+def export_json(source: str = "", ids: str = "", u=Depends(roles("qa", "adm"))):
     """Файл сдачи (JSON 1.0). Фильтр: source=dev|upload|text или ids=a,b,c. Ответы — модели (ai_answer), без правок людей.
     Перед отдачей файл проверяется тем же валидатором, что и при сдаче; с ошибками не отдаётся."""
     sys_path_scripts()
