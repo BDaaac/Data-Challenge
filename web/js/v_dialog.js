@@ -158,7 +158,7 @@ function draw(el, ctx, data, st) {
     else if (openAp) { hint = `Открыта апелляция А-${openAp.id}.`; acts = `<a class="btn pri" href="#/appeals/${openAp.id}">Рассмотреть апелляцию</a>`; }
     else { hint = ST_TEXT[d.wf_status] || ""; acts = `<button class="btn" data-rescore>Переоценить</button>`; }
   } else if (R === "op") {
-    if (d.wf_status === "published") { hint = "Апелляцию можно подать в течение 5 рабочих дней."; acts = `<button class="btn pri" data-ack>Ознакомлен</button>`; }
+    if (["published", "revised"].includes(d.wf_status)) { hint = "Ознакомьтесь с оценкой. Несогласие можно обосновать в апелляции."; acts = `<button class="btn pri" data-ack>Ознакомлен</button>`; }
     else if (opDraft.length) { hint = "Допишите довод для апелляции."; acts = `<button class="btn pri" data-goap>К апелляции</button>`; }
     else if (openAp) { hint = `Апелляция А-${openAp.id} на рассмотрении у QA.`; acts = `<button class="btn" data-apwd="${openAp.id}">Отозвать апелляцию</button>`; }
     else if (opCan) hint = "Не согласны? Нажмите «Оспорить» у вопроса.";

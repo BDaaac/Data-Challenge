@@ -1,3 +1,4 @@
+import { periodURL, periodControls } from "./period.js";
 // Экраны приложения. Каждый экспорт — функция (el, ctx), которая рисует раздел в el.
 import { $, $$, api, esc, fmt, fmt0, money, scls, dt, ago, plural, toast, fail, busy, pill, stPill, reasonPills, ansLabel, ansPill, linkify,
   emptyBox, dialogTable, bindOpen, LANG, CH, SECS, ROLE, ST, REASON, AP_ST, VIOL, TRIGGER } from "./ui.js";
@@ -18,9 +19,11 @@ export async function queue(el, ctx) {
   const lbl = k => k === "appeal" ? "Апелляции" : REASON[k][1];
   const cnt = Object.fromEntries(keys.map(k => [k, list.filter(d => has(d, k)).length]));
   const rows = st.f ? list.filter(d => has(d, st.f)) : list;
+  const oldest = list.length ? list.reduce((a,b)=>a.waiting_since < b.waiting_since ? a : b) : null;
   el.innerHTML = ph("Очередь проверки", `Модель оценила все диалоги. Сюда попадает только то, что требует человека: грубые ошибки, сбои, неуверенные и неподтверждённые ответы, апелляции и случайная выборка для контроля модели. Сначала самое рискованное.`,
       rows.length ? `<button class="btn pri" id="first">Открыть первый</button>` : "")
     + `<div class="filters"><div class="chips"><button class="chip ${!st.f ? "on" : ""}" data-f="">Все<span class="c">${list.length}</span></button>${keys.filter(k => cnt[k]).map(k => `<button class="chip ${st.f === k ? "on" : ""}" data-f="${k}">${lbl(k)}<span class="c">${cnt[k]}</span></button>`).join("")}</div></div>`
+    + (oldest ? "<p class=muted>Самое долгое ожидание: " + ago(oldest.waiting_since) + ". Это время ожидания, не согласованный SLA.</p>" : "")
     + dialogTable(rows, { reason: true, active: ctx.me.checklist.version, emptyT: "Очередь пуста", emptyP: "Все оценки проверены и опубликованы. Новые диалоги загружаются в разделе «Новые диалоги», после оценки спорные появятся здесь.", emptyActs: `<a class="btn" href="#/upload">Загрузить диалоги</a>` });
   $$("[data-f]", el).forEach(b => b.onclick = () => { st.f = b.dataset.f; queue(el, ctx); });
   bindOpen(el, ctx.go);
@@ -225,7 +228,7 @@ async function appealOne(el, ctx) {
   if (!ctx.alive()) return;
   const e = a.evaluation, cr = Object.fromEntries(e.checklist.criteria.map(c => [c.id, c])), tr = a.dialog.transcript;
   const open = a.status === "open", canDecide = open && ["qa"].includes(R);
-  const refs = new Set(a.items.flatMap(i => e.items[i.crit]?.evidence || []));
+  const refs = new Set(a.items.flatMap(i => [...(i.evidence || []), ...(e.items[i.crit]?.evidence || [])]));
   (a.text.match(/#(\d+)/g) || []).forEach(m => refs.add(+m.slice(1)));
   el.innerHTML = ph(`Апелляция А-${a.id}`, `${esc(a.operator_name)} · диалог <a href="#/dialog/${esc(a.dialog_id)}">${esc(a.dialog_id)}</a> · подана ${dt(a.created_at)}`, pill(AP_ST[a.status][0], AP_ST[a.status][1]))
     + `<div class="cols ww"><div>
@@ -285,7 +288,7 @@ export async function calibration(el, ctx) {
 
 // ======================= обзор качества =======================
 export async function dashboard(el, ctx) {
-  const o = await api("/stats/overview");
+  const o = await api(periodURL("/stats/overview"));
   if (!ctx.alive()) return;
   const st = dashboard.st || (dashboard.st = { open: null });
   const R = ctx.me.role, p = o.process, maxPts = Math.max(...o.loss.map(l => l.points), 0.01);
@@ -301,11 +304,12 @@ export async function dashboard(el, ctx) {
         <div class="sec"><h2>Процесс проверки</h2><div class="kv"><span>Ждут проверки QA</span><b>${p.review}</b><span>Открытые апелляции</span><b>${p.appeal}</b><span>Не оценены</span><b>${p.new}</b><span>Сбой оценки</span><b>${p.error}</b><span>Правок QA в текущих оценках</span><b>${p.overrides}</b><span>Апелляций принято / отклонено</span><b>${p.won} / ${p.lost}</b></div></div></div></div>`;
   $$("[data-l]", el).forEach(b => b.onclick = () => { st.open = st.open === b.dataset.l ? null : b.dataset.l; dashboard(el, ctx); });
   $$("[data-team]", el).forEach(r => r.onclick = () => ctx.go("dialogs/team=" + encodeURIComponent(r.dataset.team)));
+  periodControls(el,ctx);
 }
 
 // ======================= группа / операторы =======================
 export async function team(el, ctx) {
-  const t = await api("/stats/team");
+  const t = await api(periodURL("/stats/team"));
   if (!ctx.alive()) return;
   const R = ctx.me.role, ops = t.operators;
   const n = ops.reduce((s, o) => s + o.n, 0), cr = ops.reduce((s, o) => s + o.critical, 0);
@@ -317,11 +321,12 @@ export async function team(el, ctx) {
         <td>${o.critical ? pill("bad", o.critical) : '<span class="muted">—</span>'}</td><td>${o.weak ? `${o.weak.crit.slice(1)}. ${esc(o.weak.name)} <span class="muted">· ${o.weak.n}</span>` : '<span class="muted">—</span>'}</td><td>${o.appeals ? pill("info", o.appeals + " открыто") : '<span class="muted">—</span>'}</td></tr>`).join("")}</tbody></table></div>`
       : emptyBox("Оценённых диалогов нет", "Как только оценки будут опубликованы, здесь появится сводка по операторам."));
   $$("[data-op]", el).forEach(r => r.onclick = () => ctx.go("dialogs/operator=" + encodeURIComponent(r.dataset.op)));
+  periodControls(el,ctx);
 }
 
 // ======================= мои диалоги (оператор) =======================
 export async function my(el, ctx) {
-  const [s, list] = await Promise.all([api("/stats/me"), api("/dialogs")]);
+  const [s, list] = await Promise.all([api(periodURL("/stats/me")), api(periodURL("/dialogs"))]);
   if (!ctx.alive()) return;
   const fresh = list.filter(d => d.wf_status === "published"), rest = list.filter(d => d.wf_status !== "published");
   el.innerHTML = ph(`Здравствуйте, ${esc(ctx.me.name.split(" ")[0])}`, "Оценки ваших диалогов после проверки QA. У каждого балла есть объяснение и ссылка на реплику. Не согласны — откройте диалог и подайте апелляцию по конкретному критерию.")
@@ -330,6 +335,7 @@ export async function my(el, ctx) {
     + `<div class="sec"><h2>${fresh.length ? "Ранее" : "Все оценки"}</h2>${dialogTable(rest, { emptyT: "Оценок пока нет", emptyP: "Оценка появится здесь после того, как QA-специалист проверит диалог. Придёт уведомление." })}</div>`
     + (s.weak ? `<p class="sm muted">Как оценивается критерий «${esc(s.weak.name)}» — в разделе <a href="#/rules">Как меня оценивают</a>.</p>` : "");
   bindOpen(el, ctx.go);
+  periodControls(el,ctx);
 }
 
 // ======================= пользователи =======================

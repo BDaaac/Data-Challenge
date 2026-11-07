@@ -46,6 +46,30 @@ class Workflows(unittest.TestCase):
         self.assertEqual(lead.post("/api/appeals/1/withdraw",json={}).status_code,403)
         self.assertEqual(lead.post("/api/appeals/1/decide",json={}).status_code,403)
 
+    def test_full_review_cycle_with_fake_model(self):
+        qa,u=self.login("qa")
+        did="synthetic-"+uuid.uuid4().hex
+        body={"records":[{"conversation_id":did,"channel":"agent chat","language":"RU","transcript":[{"speaker":"client","text":"Здравствуйте"},{"speaker":"operator","text":"Здравствуйте, меня зовут Тестовый"}]}],"evaluate":False}
+        r=qa.post("/api/dialogs",json=body)
+        self.assertEqual(r.status_code,200,r.text)
+        result,plan=engine._plan_job("Test","evaluate",[did],u["id"])
+        duplicate,empty=engine._plan_job("Test","evaluate",[did],u["id"])
+        self.assertEqual(result["id"],duplicate["id"])
+        self.assertEqual(empty,[])
+        def fake(runner,rec,c,facts,prefix):
+            answer="yes" if c["type"]=="flag" else ("yes" if "yes" in c["answers"] else str(engine.scale_max(c)))
+            return {"answer":answer,"confidence":1,"evidence":[2],"explanation":"Synthetic test answer"},0,0
+        with patch.object(engine.cqa,"Runner",return_value=object()), patch.object(engine,"evaluate_criterion",side_effect=fake):
+            engine.run_evaluation(plan[0][0])
+        self.assertEqual(db.one("SELECT wf_status FROM dialogs WHERE id=%s",did)["wf_status"],"review")
+        self.assertEqual(qa.post("/api/dialogs/"+did+"/confirm").status_code,200)
+        d=db.one("SELECT * FROM dialogs WHERE id=%s",did)
+        op,_=self.login("op",d["operator"])
+        self.assertEqual(op.get("/api/dialogs/"+did).status_code,200)
+        self.assertEqual(op.post("/api/dialogs/"+did+"/acknowledge").status_code,200)
+        self.assertEqual(qa.get("/api/stats/overview?start=2100-01-01").json()["done"],0)
+        self.assertEqual(qa.get("/api/stats/overview?start=invalid").status_code,422)
+
     def test_dynamics_import(self):
         from app.dynamics import import_record
         user=db.one("SELECT * FROM users WHERE role='op' LIMIT 1")
@@ -86,7 +110,7 @@ class Workflows(unittest.TestCase):
         criterion=engine.checklist(e["checklist_id"])["criteria"][0]
         answer=engine.items_of(e["id"])[criterion["id"]]["answer"]
         want=next(a for a in criterion["answers"] if a!=answer)
-        body={"text":"Проверка аргумента апелляции","items":[{"crit":criterion["id"],"want":want}]}
+        body={"text":"Проверка аргумента апелляции #1","items":[{"crit":criterion["id"],"want":want}]}
         path="/api/dialogs/"+d["id"]+"/appeal"
         # Fault after insert must roll back status, appeal and notification together.
         with patch.object(engine,"notify",side_effect=RuntimeError("injected")):

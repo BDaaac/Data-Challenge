@@ -199,3 +199,6 @@ CREATE TABLE IF NOT EXISTS external_dialogs (
  dialog_id text NOT NULL UNIQUE REFERENCES dialogs(id),
  PRIMARY KEY(source,external_id)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS one_current_evaluation ON evaluations(dialog_id) WHERE is_current;
+CREATE UNIQUE INDEX IF NOT EXISTS one_open_appeal ON appeals(dialog_id) WHERE status='open';
