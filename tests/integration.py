@@ -66,6 +66,16 @@ class Workflows(unittest.TestCase):
         self.assertEqual(qa.get("/api/calibration").json()["answers"],calibration["answers"])
         self.assertEqual(qa.get("/api/stats/overview").status_code,200)
 
+    def test_offline_reuse_without_ai_client(self):
+        qa,u=self.login("qa")
+        e=db.one("""SELECT e.* FROM evaluations e JOIN dialogs d ON d.id=e.dialog_id
+                    WHERE e.is_current AND e.status='done' AND e.job_id IS NULL AND d.wf_status<>'appeal' LIMIT 1""")
+        result,plan=engine._plan_job("Offline reuse","rescore",[e["dialog_id"]],u["id"])
+        self.assertEqual(plan[0][1],[])
+        # The suite already forbids constructing a real AI client.
+        engine.run_evaluation(plan[0][0])
+        self.assertEqual(engine.current_eval(e["dialog_id"])["total"],e["total"])
+
     def test_retry_is_serialized(self):
         e=db.one("SELECT * FROM evaluations WHERE is_current LIMIT 1")
         db.run("UPDATE evaluations SET status='partial' WHERE id=%s",e["id"])

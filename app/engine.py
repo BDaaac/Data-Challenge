@@ -232,7 +232,7 @@ def run_evaluation(eval_id, only=None):
     rec ={"conversation_id": d["id"], "channel": d["channel"], "language": d["language"], "transcript": d["transcript"]}
     facts = cqa.facts_of(rec)
     prefix = {"type": "text", "text": "ТРАНСКРИПТ:\n" + cqa.transcript_text(rec), "cache_control": {"type": "ephemeral"}}
-    runner = cqa.Runner(model=ev["model"], budget=float(setting("budget")))
+    runner = cqa.Runner(model=ev["model"], budget=float(setting("budget"))) if todo else None
     t0 = time.time()
 
     def one_crit(cid):
