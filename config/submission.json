@@ -1,0 +1,4 @@
+{
+  "team_name": "",
+  "model": {"mode": "external_api", "name": "claude-sonnet-5-5"}
+}

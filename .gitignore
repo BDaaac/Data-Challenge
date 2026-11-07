@@ -1,0 +1,11 @@
+.pgdata/
+.venv/
+__pycache__/
+.env
+.env.*
+!.env.example
+pip-*/
+tmp*/
+runs/web_backup_before_fixes/
+runs/app_backup_before_fixes/
+*.log

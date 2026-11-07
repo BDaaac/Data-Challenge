@@ -1,0 +1,755 @@
+{
+  "schema_version": "1.0",
+  "team_name": "T",
+  "model": {
+    "mode": "external_api",
+    "name": "claude-sonnet-5-5"
+  },
+  "results": [
+    {
+      "conversation_id": "p1-ru-006",
+      "status": "ok",
+      "criteria": [
+        {
+          "criterion_id": "contact",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "discovery",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "identification",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "consultation",
+          "value": 20,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "empathy",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "dialogue",
+          "value": 10,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "closure",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "critical",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        }
+      ],
+      "score": {
+        "final_score": 100.0,
+        "critical_flag": false
+      }
+    },
+    {
+      "conversation_id": "p1-ru-009",
+      "status": "ok",
+      "criteria": [
+        {
+          "criterion_id": "contact",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "discovery",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "identification",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "consultation",
+          "value": 5,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "empathy",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "dialogue",
+          "value": 4,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "closure",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "critical",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        }
+      ],
+      "score": {
+        "final_score": 36.0,
+        "critical_flag": true
+      }
+    },
+    {
+      "conversation_id": "p1-ru-012",
+      "status": "ok",
+      "criteria": [
+        {
+          "criterion_id": "contact",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "discovery",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "identification",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "consultation",
+          "value": 20,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "empathy",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "dialogue",
+          "value": 10,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "closure",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "critical",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        }
+      ],
+      "score": {
+        "final_score": 100.0,
+        "critical_flag": false
+      }
+    },
+    {
+      "conversation_id": "p1-ru-018",
+      "status": "ok",
+      "criteria": [
+        {
+          "criterion_id": "contact",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "discovery",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "identification",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "consultation",
+          "value": 0,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "empathy",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "dialogue",
+          "value": 0,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "closure",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "critical",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        }
+      ],
+      "score": {
+        "final_score": 10.0,
+        "critical_flag": false
+      }
+    },
+    {
+      "conversation_id": "p1-ru-022",
+      "status": "ok",
+      "criteria": [
+        {
+          "criterion_id": "contact",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "discovery",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "identification",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "consultation",
+          "value": 0,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "empathy",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "dialogue",
+          "value": 10,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "closure",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "critical",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        }
+      ],
+      "score": {
+        "final_score": 31.25,
+        "critical_flag": true
+      }
+    },
+    {
+      "conversation_id": "p1-ru-027",
+      "status": "ok",
+      "criteria": [
+        {
+          "criterion_id": "contact",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "discovery",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "identification",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "consultation",
+          "value": 20,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "empathy",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "dialogue",
+          "value": 10,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "closure",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "critical",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        }
+      ],
+      "score": {
+        "final_score": 92.31,
+        "critical_flag": false
+      }
+    },
+    {
+      "conversation_id": "p1-kz-003",
+      "status": "ok",
+      "criteria": [
+        {
+          "criterion_id": "contact",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "discovery",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "identification",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "consultation",
+          "value": 20,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "empathy",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "dialogue",
+          "value": 10,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "closure",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "critical",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        }
+      ],
+      "score": {
+        "final_score": 100.0,
+        "critical_flag": false
+      }
+    },
+    {
+      "conversation_id": "p1-kz-011",
+      "status": "ok",
+      "criteria": [
+        {
+          "criterion_id": "contact",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "discovery",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "identification",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "consultation",
+          "value": 20,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "empathy",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "dialogue",
+          "value": 10,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "closure",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "critical",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        }
+      ],
+      "score": {
+        "final_score": 100.0,
+        "critical_flag": false
+      }
+    },
+    {
+      "conversation_id": "p1-kz-013",
+      "status": "ok",
+      "criteria": [
+        {
+          "criterion_id": "contact",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "discovery",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "identification",
+          "value": null,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "consultation",
+          "value": 20,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "empathy",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "dialogue",
+          "value": 10,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "closure",
+          "value": false,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        },
+        {
+          "criterion_id": "critical",
+          "value": true,
+          "rationale": "x",
+          "evidence_turns": [
+            1,
+            3
+          ]
+        }
+      ],
+      "score": {
+        "final_score": 69.23,
+        "critical_flag": true
+      }
+    },
+    {
+      "conversation_id": "p1-kz-015",
+      "status": "error",
+      "criteria": [],
+      "score": null,
+      "error": "Не удалось получить ответ модели."
+    }
+  ]
+}

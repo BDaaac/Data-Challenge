@@ -1,0 +1,502 @@
+<title>CQA: путь пользователя</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: документация продукта — липкое оглавление слева, колонка текста ~760px, таблицы и схемы шире */
+:root{
+  --bg:#F5F6F4; --paper:#FFFFFF; --fg:#151A17; --fg-2:#46504A; --fg-3:#76807A;
+  --line:#DFE3DF; --line-2:#C7CDC8; --accent:#0B6B47; --accent-weak:#E4F1EA; --accent-line:#A9D0BD;
+  --ok:#0A6B3D; --ok-bg:#E6F3EB; --bad:#AE2A1B; --bad-bg:#FBEBE8; --warn:#93500B; --warn-bg:#FCF0E0; --info:#1F4E8C; --info-bg:#E7EEF8; --na-bg:#ECEFEC;
+  --display:"IBM Plex Serif",Georgia,serif; --body:"IBM Plex Sans",system-ui,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111513; --paper:#171C19; --fg:#E7ECE8; --fg-2:#B6C0B9; --fg-3:#87918B; --line:#2A322D; --line-2:#3A443E;
+  --accent:#5BC394; --accent-weak:#1B3328; --accent-line:#2F6B50; --ok:#6DD3A0; --ok-bg:#183326; --bad:#F2917F; --bad-bg:#3A1E19;
+  --warn:#EDB46A; --warn-bg:#3A2A14; --info:#8FB5EC; --info-bg:#1A2A42; --na-bg:#232A26; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111513; --paper:#171C19; --fg:#E7ECE8; --fg-2:#B6C0B9; --fg-3:#87918B; --line:#2A322D; --line-2:#3A443E;
+  --accent:#5BC394; --accent-weak:#1B3328; --accent-line:#2F6B50; --ok:#6DD3A0; --ok-bg:#183326; --bad:#F2917F; --bad-bg:#3A1E19;
+  --warn:#EDB46A; --warn-bg:#3A2A14; --info:#8FB5EC; --info-bg:#1A2A42; --na-bg:#232A26; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px;max-width:1240px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+nav.toc{position:sticky;top:calc(24px + env(safe-area-inset-top,0px));align-self:start;font-size:13.5px}
+.toc b{display:block;font-size:11.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--fg-3);font-weight:500;margin-bottom:10px}
+.toc a{display:block;color:var(--fg-2);text-decoration:none;padding:4px 0 4px 12px;border-left:1px solid var(--line)}
+.toc a:hover{color:var(--fg);border-left-color:var(--fg-3)}
+.toc a.on{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+main{min-width:0;max-width:860px}
+header.hero{padding-bottom:28px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.eyebrow{font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--accent);font-weight:500}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(30px,4.2vw,42px);line-height:1.15;margin:8px 0 12px;text-wrap:balance;letter-spacing:-.3px}
+.lead{font-size:17px;color:var(--fg-2);max-width:66ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:18px;font-size:13px;color:var(--fg-3)}
+.meta span b{color:var(--fg-2);font-weight:500}
+section{padding-top:44px;scroll-margin-top:16px}
+h2{font-family:var(--display);font-weight:600;font-size:25px;line-height:1.25;margin:0 0 6px;text-wrap:balance}
+h2 .n{font-family:var(--mono);font-size:13px;color:var(--fg-3);font-weight:400;margin-right:10px;vertical-align:4px}
+h3{font-size:16px;font-weight:600;margin:24px 0 8px}
+p{margin:0 0 12px;max-width:68ch}
+.sub{color:var(--fg-2);margin-bottom:18px}
+.muted{color:var(--fg-3)}
+.mono{font-family:var(--mono);font-size:.88em}
+a{color:var(--accent)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--paper);margin:12px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-weight:500;font-size:12px;color:var(--fg-3);background:var(--bg);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.c,th.c{text-align:center}
+.y{color:var(--ok);font-weight:600}.p{color:var(--warn);font-weight:500}.x{color:var(--fg-3)}
+.pill{display:inline-block;font-size:12px;font-weight:500;padding:0 8px;border-radius:4px;line-height:21px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.info{background:var(--info-bg);color:var(--info)}.pill.na{background:var(--na-bg);color:var(--fg-2)}.pill.acc{background:var(--accent-weak);color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}
+.role{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.role h4{margin:0;font-size:15px;font-weight:600}
+.role .who{font-size:12.5px;color:var(--fg-3)}
+.role dl{margin:0;font-size:13px;display:grid;gap:6px}
+.role dt{font-size:11.5px;color:var(--fg-3);text-transform:uppercase;letter-spacing:.5px}
+.role dd{margin:0;color:var(--fg-2)}
+.role.core{border-color:var(--accent-line);box-shadow:inset 0 3px 0 var(--accent)}
+.learn{display:grid;gap:10px;margin-top:14px}
+.learn div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 16px;font-size:14px}
+.learn b{display:block;font-weight:600;margin-bottom:2px}
+.learn .us{color:var(--fg-2);border-left:1px solid var(--line);padding-left:16px}
+.learn .us::before{content:"У нас";display:block;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-weight:500;margin-bottom:2px}
+.learn .src{font-size:12px;color:var(--fg-3)}
+.filter{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px;align-items:center;font-size:13px;color:var(--fg-3)}
+.filter button{font:inherit;font-size:13px;height:30px;padding:0 12px;border:1px solid var(--line-2);border-radius:15px;background:var(--paper);color:var(--fg-2);cursor:pointer}
+.filter button.on{border-color:var(--accent);background:var(--accent-weak);color:var(--accent);font-weight:500}
+.filter button:focus-visible,.toc a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.flow{background:var(--paper);border:1px solid var(--line);border-radius:8px;margin-bottom:12px;transition:opacity .15s}
+.flow.dim{opacity:.32}
+.flow .fh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.flow .fh .id{font-family:var(--mono);font-size:12.5px;color:var(--fg-3)}
+.flow .fh h3{margin:0;font-size:15.5px;flex:1 1 220px}
+.flow ol{margin:0;padding:12px 16px 12px 40px;font-size:14px}
+.flow ol li{margin:4px 0;padding-left:4px}
+.flow ol li::marker{font-family:var(--mono);font-size:12px;color:var(--fg-3)}
+.flow .edge{border-top:1px dashed var(--line);padding:10px 16px;font-size:13px;color:var(--fg-2)}
+.flow .edge b{color:var(--warn);font-weight:500}
+.mer{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0}
+pre.mermaid{margin:0;background:transparent;font-size:13px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:12px}
+.box{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:14px;min-width:0}
+.box h4{margin:0 0 8px;font-size:14.5px;font-weight:600}
+.box ul{margin:0;padding-left:18px}.box li{margin:3px 0}
+code,.code{font-family:var(--mono);font-size:12.5px}
+pre.api{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font:12.5px/1.65 var(--mono);color:var(--fg-2);margin:12px 0}
+pre.api b{color:var(--fg);font-weight:500}
+.steps{counter-reset:s;display:grid;gap:8px;margin-top:12px}
+.steps div{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:baseline;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:14px}
+.steps div::before{content:counter(s);font-family:var(--mono);font-size:12.5px;color:var(--fg-3)}
+.steps .t{font-family:var(--mono);font-size:12px;color:var(--fg-3);white-space:nowrap}
+.note{background:var(--accent-weak);border-radius:8px;padding:12px 16px;font-size:14px;color:var(--fg);margin:14px 0}
+.note.warn{background:var(--warn-bg)}
+.verdict{display:grid;grid-template-columns:120px minmax(0,1fr);gap:4px 14px;font-size:14px;margin-top:10px}
+.verdict dt{color:var(--fg-3);font-size:13px}.verdict dd{margin:0}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--fg-3)}
+footer a{color:var(--fg-2)}
+@media (max-width:900px){.wrap{grid-template-columns:1fr;gap:0}nav.toc{display:none}.learn div,.split{grid-template-columns:1fr}.learn .us{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:8px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Оглавление">
+  <b>Содержание</b>
+  <a href="#market">Что взяли у рынка</a>
+  <a href="#roles">Для кого</a>
+  <a href="#rights">Права доступа</a>
+  <a href="#auth">Вход и авторизация</a>
+  <a href="#lifecycle">Жизненный цикл оценки</a>
+  <a href="#map">Карта сайта</a>
+  <a href="#flows">Пути пользователя</a>
+  <a href="#appeal">Апелляция подробно</a>
+  <a href="#states">Сквозные состояния</a>
+  <a href="#demo">Демо на защите</a>
+  <a href="#build">План фронтенда</a>
+  <a href="#design">Дизайн и скиллы</a>
+  <a href="#ask">Вопросы к Freedom</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">CQA · Freedom Broker · план до реализации</div>
+  <h1>Путь пользователя в системе контроля качества диалогов</h1>
+  <p class="lead">AI оценивает каждый чат и звонок по настраиваемому чек-листу. Люди разбирают только исключения: спорные оценки, грубые ошибки, апелляции и калибровку. Документ описывает, кто работает в системе, что каждый видит и через какие шаги проходит.</p>
+  <div class="meta"><span><b>Основа:</b> ТЗ организаторов от 07.11.2026</span><span><b>Стек:</b> FastAPI, PostgreSQL, React</span><span><b>Статус:</b> черновик для команды</span></div>
+</header>
+
+<section id="market">
+  <h2><span class="n">01</span>Что взяли у рынка</h2>
+  <p class="sub">Посмотрели, как устроены QA-системы контакт-центров банков и финтеха: Verint, NICE, Zendesk QA, MaestroQA, Scorebuddy, отечественная речевая аналитика (BSS, U-BSS, T-Bank). У всех один и тот же каркас. Его и берём, а отличаемся объяснимостью и казахским языком.</p>
+  <div class="learn">
+    <div><div><b>AI оценивает 100%, люди — исключения</b>Ручная выборка покрывает 1–3% диалогов. Рынок перешёл на сплошную автооценку, а людям отдаёт только то, что AI решить не может.<div class="src">Oversai, U-BSS, Verint</div></div><div class="us">Очередь QA строится из правил: низкая уверенность, грубая ошибка, апелляция, плюс случайные 3% для контроля самого AI.</div></div>
+    <div><div><b>Каждый балл с доказательством</b>Оценку без ссылки на момент разговора операторы не принимают. Verint называет это главным условием доверия.<div class="src">Verint</div></div><div class="us">У каждого критерия номера реплик. Клик подсвечивает их в переписке.</div></div>
+    <div><div><b>Риск определяет скорость реакции</b>Нарушение идентификации или раскрытие данных разбирают в тот же день, мелкие огрехи — на калибровке.<div class="src">Oversai, risk matrix</div></div><div class="us">Грубая ошибка сразу уходит в отдельную очередь и уведомляет руководителя и комплаенс.</div></div>
+    <div><div><b>Апелляция: принять, частично принять, отклонить</b>Оператор предлагает новый ответ по каждому критерию и обязан объяснить. Решающий отвечает с комментарием, уведомляются обе стороны. Можно эскалировать руководителю.<div class="src">Zendesk QA, MaestroQA</div></div><div class="us">Так же, плюс автоматический пересчёт балла и запись «было → стало» в историю.</div></div>
+    <div><div><b>Фильтр перед QA</b>В MaestroQA апелляцию сначала может посмотреть тимлид, чтобы QA не тонул в спорах без оснований.<div class="src">MaestroQA</div></div><div class="us">Опционально: руководитель группы видит апелляции своих операторов и может отозвать необоснованные.</div></div>
+    <div><div><b>Оператор подтверждает, что ознакомился</b>Системы считают, сколько оценок оператор открыл и сколько оспорил.<div class="src">Zendesk QA</div></div><div class="us">Кнопка «Ознакомлен» в карточке. Срок на апелляцию идёт от неё.</div></div>
+    <div><div><b>Калибровка</b>Несколько оценщиков вслепую оценивают один диалог, потом сравнивают и договариваются. Метрика — согласие по каждому критерию, отдельно по языкам.<div class="src">Verint, NICE, Cloud Soft</div></div><div class="us">Сессия калибровки, где AI — ещё один участник. Показываем согласие AI с людьми по критериям и языкам RU/KZ/EN.</div></div>
+    <div><div><b>Чек-лист открыт операторам</b>Внедрение начинают с того, что показывают операторам критерии до первой оценки.<div class="src">rechka.ai, BSS</div></div><div class="us">У оператора есть страница «Как меня оценивают», только для чтения.</div></div>
+  </div>
+</section>
+
+<section id="roles">
+  <h2><span class="n">02</span>Для кого делаем</h2>
+  <p class="sub">Семь ролей. Первые три работают в системе каждый день, под них оптимизируем скорость. Остальные заходят реже, им нужна ясность.</p>
+  <div class="grid">
+    <div class="role core"><h4>QA-специалист</h4><div class="who">6–10 человек · весь день · десктоп</div>
+      <dl><dt>Задача</dt><dd>Проверить спорные оценки AI, разобрать апелляции, провести калибровку</dd><dt>Главный экран</dt><dd>Очередь → рабочее место проверки</dd><dt>Успех</dt><dd>Минуты на диалог ↓, доля правок AI ↓</dd></dl></div>
+    <div class="role core"><h4>Оператор</h4><div class="who">100+ человек · раз в день · десктоп</div>
+      <dl><dt>Задача</dt><dd>Понять, за что снижен балл, и оспорить несправедливое</dd><dt>Главный экран</dt><dd>Мои оценки → карточка диалога</dd><dt>Успех</dt><dd>Понятно, что исправить, и есть путь оспорить</dd></dl></div>
+    <div class="role core"><h4>Руководитель группы</h4><div class="who">10–15 человек · несколько раз в день</div>
+      <dl><dt>Задача</dt><dd>Видеть, кого и чему учить, отфильтровать апелляции своей группы</dd><dt>Главный экран</dt><dd>Моя группа → оператор → диалоги</dd><dt>Успех</dt><dd>Есть следующий шаг: коучинг по конкретному критерию</dd></dl></div>
+    <div class="role"><h4>Руководитель QA</h4><div class="who">1–2 человека · раз в неделю</div>
+      <dl><dt>Задача</dt><dd>Владеть чек-листом, следить за согласием AI и людей, распределять нагрузку QA</dd><dt>Главный экран</dt><dd>Чек-листы, калибровка, качество AI</dd><dt>Успех</dt><dd>Изменение критерия без программиста</dd></dl></div>
+    <div class="role"><h4>Директор, руководство</h4><div class="who">Раз в неделю или месяц · часто с ноутбука на встрече</div>
+      <dl><dt>Задача</dt><dd>Тренд качества, главные потери, экономия</dd><dt>Главный экран</dt><dd>Обзор качества</dd><dt>Успех</dt><dd>Ответ за 30 секунд без звонка аналитику</dd></dl></div>
+    <div class="role"><h4>Комплаенс</h4><div class="who">По событию</div>
+      <dl><dt>Задача</dt><dd>Получать и закрывать грубые нарушения: идентификация, раскрытие данных</dd><dt>Главный экран</dt><dd>Грубые ошибки</dd><dt>Успех</dt><dd>Ни одного пропущенного инцидента</dd></dl></div>
+    <div class="role"><h4>Администратор</h4><div class="who">IT · редко</div>
+      <dl><dt>Задача</dt><dd>Пользователи и роли, группы, подключения к источникам, выбор модели, журнал действий</dd><dt>Главный экран</dt><dd>Администрирование</dd><dt>Успех</dt><dd>Новый сотрудник получает доступ за минуту</dd></dl></div>
+  </div>
+</section>
+
+<section id="rights">
+  <h2><span class="n">03</span>Права доступа</h2>
+  <p class="sub">Права проверяет бэкенд. Фронтенд только прячет недоступное, чтобы не путать человека. «Свои» означает собственные диалоги оператора, «группа» — операторы руководителя.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Действие</th><th class="c">Оператор</th><th class="c">Рук. группы</th><th class="c">QA</th><th class="c">Рук. QA</th><th class="c">Директор</th><th class="c">Комплаенс</th><th class="c">Админ</th></tr></thead>
+    <tbody>
+      <tr><td>Видеть диалоги и оценки</td><td class="c p">свои</td><td class="c p">группа</td><td class="c y">все</td><td class="c y">все</td><td class="c p">сводка</td><td class="c p">грубые</td><td class="c x">—</td></tr>
+      <tr><td>Загружать диалоги и запускать оценку</td><td class="c x">—</td><td class="c x">—</td><td class="c y">да</td><td class="c y">да</td><td class="c x">—</td><td class="c x">—</td><td class="c y">да</td></tr>
+      <tr><td>Менять ответ AI и подтверждать</td><td class="c x">—</td><td class="c x">—</td><td class="c y">да</td><td class="c y">да</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td></tr>
+      <tr><td>Подать апелляцию</td><td class="c y">да</td><td class="c p">за оператора</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td></tr>
+      <tr><td>Решить апелляцию</td><td class="c x">—</td><td class="c p">отозвать</td><td class="c y">да</td><td class="c y">да, эскалации</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td></tr>
+      <tr><td>Редактировать и публиковать чек-лист</td><td class="c x">читать</td><td class="c x">читать</td><td class="c p">черновик</td><td class="c y">публиковать</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td></tr>
+      <tr><td>Закрыть инцидент грубой ошибки</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c y">да</td><td class="c x">—</td></tr>
+      <tr><td>Пользователи, роли, модель, интеграции</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c y">да</td></tr>
+      <tr><td>Журнал действий</td><td class="c x">—</td><td class="c x">—</td><td class="c x">—</td><td class="c y">да</td><td class="c x">—</td><td class="c y">да</td><td class="c y">да</td></tr>
+    </tbody></table></div>
+  <p class="muted" style="font-size:13px;margin-top:8px">Директор видит агрегаты и может открыть диалог, но персональные данные клиента в нём замаскированы.</p>
+</section>
+
+<section id="auth">
+  <h2><span class="n">04</span>Вход и авторизация</h2>
+  <p class="sub">ТЗ разрешает обойтись без логина. Но продукт для банка без ролей не продать, а апелляция «от имени оператора» требует понимать, кто действует. Поэтому делаем вход сразу, но простой, и закладываем путь к корпоративному SSO.</p>
+  <div class="split">
+    <div class="box"><h4>Для хакатона</h4><ul>
+      <li>Логин и пароль, пользователи создаются сидом</li>
+      <li>Сессия в httpOnly cookie, JWT на бэкенде, роль и группа внутри токена</li>
+      <li>На экране входа блок «Демо-доступ»: войти как QA, оператор, руководитель. Включается флагом окружения, в проде выключен</li>
+      <li>Переключение роли без выхода только в демо-режиме</li>
+      <li>Неактивность 30 минут → повторный вход с возвратом на ту же страницу</li>
+    </ul></div>
+    <div class="box"><h4>Для Freedom</h4><ul>
+      <li>SSO через Microsoft Entra ID (OIDC): Freedom работает на Dynamics 365, учётки уже там</li>
+      <li>Группы AD сопоставляются с ролями, руководитель — с группой операторов</li>
+      <li>Двухфакторная проверка на стороне SSO</li>
+      <li>Доступ к строкам на бэкенде: оператор физически не получает чужие диалоги</li>
+      <li>Неизменяемый журнал: вход, правка оценки, решение апелляции, публикация чек-листа</li>
+    </ul></div>
+  </div>
+  <h3>Путь входа</h3>
+  <div class="steps">
+    <div>Открывает ссылку → экран входа с названием продукта и полем логина<span class="t">/login</span></div>
+    <div>Вводит логин и пароль или нажимает «Войти через корпоративный аккаунт»<span class="t">POST /auth/login</span></div>
+    <div>Ошибка: «Неверный логин или пароль». После 5 попыток вход блокируется на 10 минут<span class="t">401 · 429</span></div>
+    <div>Успех → переход на стартовый экран роли: QA в очередь, оператор в «Мои оценки», директор в обзор<span class="t">GET /auth/me</span></div>
+    <div>Ссылка на недоступную страницу → «Нет доступа к этому разделу» и кнопка на свой стартовый экран<span class="t">403</span></div>
+  </div>
+</section>
+
+<section id="lifecycle">
+  <h2><span class="n">05</span>Жизненный цикл оценки</h2>
+  <p class="sub">Один диалог проходит через эти статусы. Статус виден в каждом списке и в шапке карточки, по нему строятся очереди.</p>
+  <div class="mer"><pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> Загружен
+  Загружен --> Оценивается: запуск оценки
+  Оценивается --> Ошибка: модель не ответила
+  Ошибка --> Оценивается: повторить
+  Оценивается --> Требует_проверки: уверенность ниже порога, грубая ошибка или случайная выборка
+  Оценивается --> Опубликовано: всё уверенно
+  Требует_проверки --> Опубликовано: QA подтвердил
+  Опубликовано --> Ознакомлен: оператор открыл
+  Ознакомлен --> Апелляция: оператор оспорил
+  Апелляция --> Пересмотрено: принято или частично
+  Апелляция --> Ознакомлен: отклонено
+  Пересмотрено --> [*]
+  Ознакомлен --> [*]: срок апелляции истёк
+  </pre></div>
+  <p class="muted" style="font-size:13px">Смена версии чек-листа не меняет старые оценки. Переоценка создаёт новую оценку рядом, история хранит обе.</p>
+</section>
+
+<section id="map">
+  <h2><span class="n">06</span>Карта сайта</h2>
+  <p class="sub">Меню собирается по роли. Ключевой экран один: карточка диалога. Через неё проходят четыре из пяти демо-сценариев ТЗ.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Экран</th><th>Адрес</th><th>Кто видит</th><th>Зачем</th></tr></thead>
+    <tbody>
+      <tr><td>Вход</td><td class="mono">/login</td><td>все</td><td>Логин, SSO, демо-доступ</td></tr>
+      <tr><td>Очередь проверки</td><td class="mono">/queue</td><td>QA</td><td>Только диалоги, где нужен человек</td></tr>
+      <tr><td>Новые диалоги</td><td class="mono">/upload</td><td>QA, админ</td><td>Файл, вставка JSON или ввод текстом</td></tr>
+      <tr><td>Прогресс оценки</td><td class="mono">/jobs/:id</td><td>QA, админ</td><td>Ход оценки пакета</td></tr>
+      <tr><td>Все диалоги</td><td class="mono">/dialogs</td><td>QA, рук. группы</td><td>Реестр с фильтрами и поиском</td></tr>
+      <tr><td><b>Карточка диалога</b></td><td class="mono">/dialogs/:id</td><td>все, по правам</td><td>Переписка, баллы, доказательства, история</td></tr>
+      <tr><td>Грубые ошибки</td><td class="mono">/violations</td><td>QA, комплаенс, руководители</td><td>Нарушения с причиной и цитатой</td></tr>
+      <tr><td>Апелляции</td><td class="mono">/appeals</td><td>QA, рук. группы</td><td>Входящие споры и решения</td></tr>
+      <tr><td>Мои оценки</td><td class="mono">/my</td><td>оператор</td><td>Свои диалоги, средний балл, апелляции</td></tr>
+      <tr><td>Как меня оценивают</td><td class="mono">/checklist</td><td>оператор</td><td>Активный чек-лист, только чтение</td></tr>
+      <tr><td>Моя группа</td><td class="mono">/team</td><td>рук. группы</td><td>Операторы, слабые критерии, коучинг</td></tr>
+      <tr><td>Чек-листы</td><td class="mono">/checklists</td><td>QA, рук. QA</td><td>Версии, редактор, переоценка</td></tr>
+      <tr><td>Калибровка</td><td class="mono">/calibration</td><td>QA, рук. QA</td><td>Слепая оценка, согласие людей и AI</td></tr>
+      <tr><td>Обзор качества</td><td class="mono">/dashboard</td><td>руководители, директор</td><td>Тренды, потери, экономия</td></tr>
+      <tr><td>Администрирование</td><td class="mono">/admin</td><td>админ</td><td>Пользователи, роли, модель, журнал</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="flows">
+  <h2><span class="n">07</span>Пути пользователя</h2>
+  <p class="sub">Метка «ТЗ» отмечает сценарий, который жюри может попросить показать без подготовки. Выберите роль, чтобы увидеть только её пути.</p>
+  <div class="filter" role="group" aria-label="Фильтр по роли"><span>Роль:</span>
+    <button class="on" data-r="all">Все</button><button data-r="qa">QA</button><button data-r="op">Оператор</button><button data-r="lead">Рук. группы</button><button data-r="head">Рук. QA</button><button data-r="dir">Директор</button><button data-r="comp">Комплаенс</button><button data-r="adm">Админ</button>
+  </div>
+
+  <div class="flow" data-roles="qa adm"><div class="fh"><span class="id">F1</span><h3>Новые данные → оценка</h3><span class="pill acc">ТЗ 5</span><span class="pill na">QA</span></div>
+    <ol><li>«Новые диалоги». Три способа: файл JSON в формате DEV, вставка JSON или ввод текстом построчно <span class="mono">Клиент: … / Оператор: …</span>. Жюри сможет вставить свой диалог прямо на защите.</li>
+      <li>Проверка до отправки: нет реплик оператора, неизвестный говорящий, пустой текст. Язык и канал определяются автоматически, их можно поправить.</li>
+      <li>Выбор чек-листа: по умолчанию активная версия для канала. Модель (облачная или локальная) в блоке «Дополнительно».</li>
+      <li>«Оценить» → экран прогресса: состояние каждого диалога и каждого критерия. Можно уйти, по готовности придёт уведомление.</li>
+      <li>Готово → таблица результатов пакета → клик открывает карточку диалога.</li></ol>
+    <div class="edge"><b>Если что-то не так:</b> модель не ответила по критерию — только он помечен «Не оценён, повторить», остальное сохраняется. Все критерии N/A — итог «Не рассчитывается» с причиной, а не 0.</div></div>
+
+  <div class="flow" data-roles="qa lead op head dir"><div class="fh"><span class="id">F2</span><h3>Открыть диалог и понять оценку</h3><span class="pill acc">ТЗ 4</span><span class="pill na">все роли</span></div>
+    <ol><li>Поиск по ID, оператору или фильтрам → карточка диалога.</li>
+      <li>Справа итог, баллы по секциям, флаг грубой ошибки. Под итогом формула: «применимый вес 80, N/A перераспределён, коэффициент 1,25».</li>
+      <li>Клик по критерию: ответ, обоснование, уверенность, номера реплик. Слева подсвечиваются эти реплики.</li>
+      <li>У N/A всегда причина. Для звонков пометка: «Транскрипт распознан автоматически, ошибки распознавания не штрафуются».</li>
+      <li>Внизу паспорт оценки: версия чек-листа, модель, дата, хэш промпта. История показывает все оценки этого диалога.</li></ol></div>
+
+  <div class="flow" data-roles="qa"><div class="fh"><span class="id">F3</span><h3>Проверка в очереди</h3><span class="pill na">QA</span></div>
+    <ol><li>Очередь отсортирована по риску: грубые ошибки, затем апелляции, затем низкая уверенность, затем случайная выборка.</li>
+      <li>В карточке спорные критерии раскрыты и помечены «Требует проверки».</li>
+      <li>QA меняет ответ → балл пересчитывается сразу → без причины изменения подтвердить нельзя.</li>
+      <li>«Подтвердить» публикует оценку оператору. «Следующий» открывает следующий диалог без возврата в список.</li></ol>
+    <div class="edge"><b>Важно:</b> причины правок собираются в отчёт «Где AI ошибается». Он нужен руководителю QA, чтобы улучшать формулировки критериев.</div></div>
+
+  <div class="flow" data-roles="qa comp lead head"><div class="fh"><span class="id">F4</span><h3>Все грубые ошибки</h3><span class="pill acc">ТЗ 1</span><span class="pill na">QA</span><span class="pill na">Комплаенс</span></div>
+    <ol><li>Пункт меню «Грубые ошибки» со счётчиком открытых.</li>
+      <li>В каждой строке: тип нарушения, причина одной фразой и цитата с номером реплики. Например: «Назвал баланс до подтверждения личности, #8».</li>
+      <li>Фильтры: период, группа, тип, статус (новая, в работе, закрыта).</li>
+      <li>Клик → карточка с раскрытым критерием 8. Комплаенс ставит статус и комментарий.</li>
+      <li>Выгрузка списка в Excel.</li></ol></div>
+
+  <div class="flow" data-roles="op lead qa"><div class="fh"><span class="id">F5</span><h3>Апелляция от оператора</h3><span class="pill acc">ТЗ 2</span><span class="pill na">Оператор</span><span class="pill na">QA</span></div>
+    <ol><li>Оператор → «Мои оценки» → диалог → «Ознакомлен».</li>
+      <li>На критерии «Оспорить»: выбрать желаемый ответ, написать довод (обязательно), указать реплики. Можно оспорить несколько критериев сразу.</li>
+      <li>Статус «Апелляция подана». Руководитель группы видит её и может отозвать без оснований.</li>
+      <li>QA видит рядом довод, обоснование AI и переписку. Решение: принять, частично принять или отклонить, комментарий обязателен.</li>
+      <li>Балл пересчитывается, в истории «было → стало». Оператор и QA получают уведомление.</li></ol>
+    <div class="edge"><b>Ограничения:</b> одна апелляция на критерий, срок 5 рабочих дней с момента «Ознакомлен». Спор о грубой ошибке решает руководитель QA.</div></div>
+
+  <div class="flow" data-roles="head qa"><div class="fh"><span class="id">F6</span><h3>Изменить чек-лист</h3><span class="pill acc">ТЗ 3</span><span class="pill na">Рук. QA</span></div>
+    <ol><li>«Чек-листы» → активная версия → «Создать черновик».</li>
+      <li>Изменить вес: сумма весов видна всегда, при сумме не 100 публикация недоступна. Отредактировать формулировку Да, Нет, N/A — это и есть инструкция для модели. Добавить критерий: название, секция, тип, шкала, N/A, вес.</li>
+      <li>«Сравнить с текущей» — построчная разница.</li>
+      <li>«Проверить на эталоне»: совпадение с разметкой было и стало.</li>
+      <li>«Опубликовать» → предложение переоценить. Смена веса пересчитывается без модели, мгновенно и бесплатно. Смена формулировки переоценивает только этот критерий. Перед запуском видно число диалогов и стоимость.</li>
+      <li>Итог: «Изменилось 12 оценок из 65», список изменённых. Старые оценки сохраняют метку прежней версии.</li></ol></div>
+
+  <div class="flow" data-roles="lead dir head"><div class="fh"><span class="id">F7</span><h3>Руководитель: от цифры к действию</h3><span class="pill na">Рук. группы</span><span class="pill na">Директор</span></div>
+    <ol><li>Обзор качества: средний балл, тренд, покрытие, грубые ошибки, стоимость проверки.</li>
+      <li>«Где теряем баллы» → клик по критерию → список диалогов с нарушением этого критерия.</li>
+      <li>«Моя группа» → оператор → его слабый критерий → примеры диалогов.</li>
+      <li>«Назначить коучинг»: тема — критерий, примеры прикрепляются автоматически.</li></ol>
+    <div class="edge"><b>Правило:</b> каждая цифра кликабельна и ведёт к диалогам. Дашборд без следующего шага — типичный провал рынка.</div></div>
+
+  <div class="flow" data-roles="head qa"><div class="fh"><span class="id">F8</span><h3>Калибровка</h3><span class="pill na">Рук. QA</span><span class="pill na">QA</span></div>
+    <ol><li>Руководитель QA выбирает 5–10 диалогов и участников.</li>
+      <li>Каждый оценивает вслепую, не видя ответов AI и коллег.</li>
+      <li>Сводная таблица: где мнения расходятся. AI показан как ещё один участник.</li>
+      <li>Обсуждение → согласованный ответ становится эталоном. Неясные формулировки — кандидаты на правку чек-листа.</li></ol></div>
+
+  <div class="flow" data-roles="adm"><div class="fh"><span class="id">F9</span><h3>Администрирование</h3><span class="pill na">Админ</span></div>
+    <ol><li>Пользователи: добавить, назначить роль и группу, заблокировать.</li>
+      <li>Модель: облачная или локальная, порог уверенности, доля случайной выборки.</li>
+      <li>Источники: подключение к Dynamics 365, телефонии, загрузка файлов.</li>
+      <li>Журнал действий с фильтрами по пользователю и типу события.</li></ol></div>
+</section>
+
+<section id="appeal">
+  <h2><span class="n">08</span>Апелляция подробно</h2>
+  <p class="sub">Самый чувствительный путь: от него зависит, будут ли операторы доверять системе.</p>
+  <div class="mer"><pre class="mermaid">
+flowchart LR
+  A["Оператор: Ознакомлен"] --> B{"Согласен?"}
+  B -- да --> Z["Оценка закрыта"]
+  B -- нет --> C["Оспорить критерии: новый ответ + довод"]
+  C --> D{"Рук. группы: есть основание?"}
+  D -- нет, отозвать --> Z
+  D -- да или не смотрел 1 день --> E["QA: довод, обоснование AI, переписка"]
+  E --> F{"Решение"}
+  F -- принять --> G["Пересчёт балла, история было → стало"]
+  F -- частично --> G
+  F -- отклонить --> H["Комментарий оператору"]
+  E -- грубая ошибка --> I["Рук. QA решает"]
+  I --> F
+  G --> N["Уведомление оператору и QA"]
+  H --> N
+  </pre></div>
+</section>
+
+<section id="states">
+  <h2><span class="n">09</span>Сквозные состояния</h2>
+  <p class="sub">Проектируем до кода, иначе на демо всплывёт пустой экран или бесконечный спиннер.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Ситуация</th><th>Что видит пользователь</th></tr></thead>
+    <tbody>
+      <tr><td>Оценка идёт</td><td>Скелетон карточки и прогресс по критериям: 5 из 8</td></tr>
+      <tr><td>Модель не уверена</td><td><span class="pill warn">Требует проверки</span> и уверенность в процентах, диалог в очереди QA</td></tr>
+      <tr><td>Неполные данные: обрыв, нет запроса</td><td><span class="pill na">N/A</span> с причиной, без выдуманных фактов</td></tr>
+      <tr><td>Все критерии N/A</td><td>Итог «Не рассчитывается» и объяснение</td></tr>
+      <tr><td>Ошибка модели или сети</td><td>Ошибка на уровне критерия и кнопка «Повторить»</td></tr>
+      <tr><td>Пустой список</td><td>Что здесь появится и действие: «Загрузите первые диалоги»</td></tr>
+      <tr><td>Неверный файл</td><td>Какая строка, что не так, пример правильного формата</td></tr>
+      <tr><td>Сессия истекла</td><td>Вход и возврат на ту же страницу, черновики форм сохранены</td></tr>
+      <tr><td>Нет прав</td><td>Пункта нет в меню, прямая ссылка → «Нет доступа» и стартовый экран роли</td></tr>
+      <tr><td>Чек-лист изменили во время проверки</td><td>Баннер: «Опубликована версия 2. Эта оценка сделана по версии 1»</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="demo">
+  <h2><span class="n">10</span>Демо на защите</h2>
+  <p class="sub">Шесть минут, всё вживую. Порядок выбран так, чтобы за одно выступление закрыть все пять сценариев ТЗ.</p>
+  <div class="steps">
+    <div>Вход как руководитель → обзор качества: что это и сколько экономит<span class="t">0:30</span></div>
+    <div>Вход как QA → вставляем новый диалог текстом → оценка вживую<span class="t">ТЗ 5 · 1:30</span></div>
+    <div>Карточка: доказательства, N/A с причиной, паспорт оценки<span class="t">ТЗ 4 · 1:00</span></div>
+    <div>«Грубые ошибки» → причина и цитата → карточка<span class="t">ТЗ 1 · 0:45</span></div>
+    <div>Вход как оператор → «Оспорить» → вход как QA → частично принять → балл пересчитан<span class="t">ТЗ 2 · 1:15</span></div>
+    <div>Чек-лист: меняем вес → мгновенный пересчёт. Правим формулировку → переоценка одного критерия<span class="t">ТЗ 3 · 1:00</span></div>
+  </div>
+  <div class="note">Готовность проверяем так: каждый сценарий проходит с чистой базы за 2 минуты, без консоли и без заранее подготовленных результатов.</div>
+</section>
+
+<section id="build">
+  <h2><span class="n">11</span>План фронтенда</h2>
+  <div class="split">
+    <div class="box"><h4>Стек</h4><ul>
+      <li>React, Vite, TypeScript. Сборку отдаёт FastAPI: одна ссылка для жюри</li>
+      <li>TanStack Query для данных и опроса прогресса, React Router</li>
+      <li>shadcn/ui на Radix и Tailwind с токенами из прототипа</li>
+      <li>Если подтвердится встраивание в Dynamics 365 — Fluent UI</li>
+    </ul></div>
+    <div class="box"><h4>Правила</h4><ul>
+      <li>Итог считает только бэкенд, фронт показывает число из ответа</li>
+      <li>Права проверяет бэкенд, фронт только прячет</li>
+      <li>Все тексты на русском, длинные казахские строки не обрезаются</li>
+      <li>Каждое действие в журнале, каждая правка с причиной</li>
+    </ul></div>
+  </div>
+  <h3>Что нужно от бэкенда</h3>
+  <pre class="api"><b>POST</b>  /auth/login · <b>POST</b> /auth/logout · <b>GET</b> /auth/me
+<b>POST</b>  /api/dialogs                      файл | json | текст → проверка
+<b>GET</b>   /api/dialogs?status=&amp;flag=&amp;lang=&amp;channel=&amp;operator=&amp;failed_criterion=
+<b>GET</b>   /api/dialogs/:id                  переписка, последняя оценка, история
+<b>POST</b>  /api/evaluations                  {dialog_ids, checklist_version} → job_id
+<b>GET</b>   /api/jobs/:id                     прогресс
+<b>PATCH</b> /api/evaluations/:id/items/:crit  {answer, reason} → пересчитанный итог
+<b>POST</b>  /api/evaluations/:id/confirm · /acknowledge
+<b>GET</b>   /api/violations · <b>PATCH</b> /api/violations/:id
+<b>POST</b>  /api/appeals · <b>PATCH</b> /api/appeals/:id  {decision, items, comment}
+<b>GET</b>   /api/checklists · <b>POST</b> /versions · <b>POST</b> /versions/:id/publish · /rescore-preview
+<b>GET</b>   /api/stats · /api/calibration · /api/admin/users · /api/audit</pre>
+  <h3>Порядок работ</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Этап</th><th>Что делаем</th><th>Закрывает</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill bad">P0</span></td><td>Вход, роли, меню по роли, реестр, карточка диалога с доказательствами</td><td>ТЗ 4</td></tr>
+      <tr><td><span class="pill bad">P0</span></td><td>Загрузка: файл, JSON, текст. Прогресс оценки</td><td>ТЗ 5</td></tr>
+      <tr><td><span class="pill bad">P0</span></td><td>Грубые ошибки с причиной и цитатой</td><td>ТЗ 1</td></tr>
+      <tr><td><span class="pill bad">P0</span></td><td>Апелляция: подать, решить, пересчитать, уведомить</td><td>ТЗ 2</td></tr>
+      <tr><td><span class="pill bad">P0</span></td><td>Редактор чек-листа: вес, формулировка, новый критерий, версии, переоценка</td><td>ТЗ 3</td></tr>
+      <tr><td><span class="pill warn">P1</span></td><td>Очередь QA, подтверждение, история оценок, сравнение версий, все сквозные состояния</td><td>N/A, неуверенность</td></tr>
+      <tr><td><span class="pill info">P2</span></td><td>Обзор качества, моя группа, калибровка, администрирование, экспорт</td><td>интересные функции</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="design">
+  <h2><span class="n">12</span>Дизайн и скиллы</h2>
+  <p class="sub">Направление: спокойный рабочий инструмент. Нейтральные поверхности, один фирменный зелёный акцент. Цвет означает только статус: выполнено, нарушено, N/A, требует проверки. Таблицы плотные, цифры выровнены. Никаких маскотов, градиентов и игровых наград.</p>
+  <h3>Taste Skill (tasteskill.dev)</h3>
+  <dl class="verdict">
+    <dt>Что это</dt><dd>Открытый скилл для Claude Code и других агентов. Библиотека из 247 сайтов, скрипт выдаёт три случайных дизайн-направления из двадцати, ищет фото в открытых коллекциях и проверяет страницу в браузере на 1440, 768 и 390 px.</dd>
+    <dt>Плюсы</dt><dd>Проверка своих скриншотов в браузере. С версии 2.1 есть отдельный режим для дашбордов и экранов приложений: тихие панели, выровненные цифры, цвет только для данных.</dd>
+    <dt>Минусы</dt><dd>Основной режим заточен под лендинги: «название монументом», «журнальная вёрстка», «финтех как стритвир». Для банка случайные направления — риск. Сборка 30–45 минут и сотни тысяч токенов, нужны Node 22 и Chrome.</dd>
+    <dt>Вывод</dt><dd><span class="pill ok">Брать частично</span> Только режим <span class="mono">inspect.mjs --app</span> для проверки готовых экранов. Направление дизайна задаём сами через <span class="mono">impeccable teach</span>, без случайной выдачи.</dd>
+  </dl>
+  <h3>Как используем скиллы</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Шаг</th><th>Инструмент</th></tr></thead>
+    <tbody>
+      <tr><td>Записать контекст: аудитория, тон, запреты</td><td class="mono">impeccable teach</td></tr>
+      <tr><td>Собрать экраны по этой карте</td><td class="mono">impeccable craft</td></tr>
+      <tr><td>Проверить глазами ролей</td><td class="mono">critique</td></tr>
+      <tr><td>Доступность, адаптивность, анти-паттерны</td><td class="mono">audit · Axe Accessibility</td></tr>
+      <tr><td>Скриншоты в трёх ширинах</td><td class="mono">Taste Skill inspect --app</td></tr>
+      <tr><td>Убрать лишнее, финальная доводка</td><td class="mono">quieter · polish</td></tr>
+    </tbody></table></div>
+  <div class="note warn">Не используем: delight, bolder, overdrive, агента Whimsy Injector и случайные направления Taste Skill. Они тянут к игровому оформлению, от которого предостерегает ТЗ.</div>
+</section>
+
+<section id="ask">
+  <h2><span class="n">13</span>Вопросы к Freedom</h2>
+  <p class="sub">Ответы не блокируют демо, но меняют продовую архитектуру. Пока работаем с допущениями.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Вопрос</th><th>Что меняет</th><th>Допущение</th></tr></thead>
+    <tbody>
+      <tr><td>Сколько диалогов в день и какая доля звонков?</td><td>Очередь, бюджет модели, локальная или облачная</td><td>2 000 в день</td></tr>
+      <tr><td>Допустимое время оценки одного диалога?</td><td>Онлайн или ночной пакет</td><td>до 60 с</td></tr>
+      <tr><td>Сколько операторов, QA и руководителей?</td><td>Нагрузка, лицензии, роли</td><td>150 / 8 / 15</td></tr>
+      <tr><td>Вход через Entra ID? Встраивание в Dynamics 365?</td><td>Авторизация и стек интерфейса</td><td>да, отдельное приложение</td></tr>
+      <tr><td>Можно ли отправлять переписку во внешний LLM?</td><td>Модель и маскирование данных</td><td>обе модели, маскирование</td></tr>
+      <tr><td>Связаны ли оценки с премией?</td><td>Строгость апелляций и аудита</td><td>нет, пока нет калибровки</td></tr>
+      <tr><td>Кто получает грубые ошибки и в какой срок?</td><td>Уведомления, очередь комплаенса</td><td>комплаенс, тот же день</td></tr>
+      <tr><td>Сколько хранить диалоги и оценки?</td><td>Хранилище, архив</td><td>3 года</td></tr>
+    </tbody></table></div>
+</section>
+
+<footer>
+  Источники:
+  <a href="https://www.verint.com/blog/best-contact-center-quality-assurance-software/">Verint, QA software</a> ·
+  <a href="https://www.verint.com/guides/contact-center-quality-management/">Verint, quality management guide</a> ·
+  <a href="https://support.zendesk.com/hc/en-us/articles/7043760048922-Disputing-a-review">Zendesk QA, disputing a review</a> ·
+  <a href="https://support.zendesk.com/hc/en-us/articles/7849332023322-How-do-I-partially-accept-a-dispute-in-Zendesk-QA">Zendesk QA, partial accept</a> ·
+  <a href="https://www.intryc.com/blog/intryc-vs-maestroqa-which-qa-platform-is-right-for-your-team">Intryc vs MaestroQA</a> ·
+  <a href="https://www.oversai.com/news/contact-center-compliance-qa-checklist-2026">Oversai, compliance QA</a> ·
+  <a href="https://cloudsoftsol.com/blog/call-center-qa-ai-project">Cloud Soft, QA AI в банке</a> ·
+  <a href="https://birdie.ai/blog/call-center-qa-software">Birdie, QA для финсектора</a> ·
+  <a href="https://bssys.com/st/products/speech-analytics/">BSS, речевая аналитика</a> ·
+  <a href="https://www.ubss.uz/solutions/quality-control">U-BSS, контроль качества</a> ·
+  <a href="https://rechka.ai/blog/kontrol-operatorov/">rechka.ai, контроль операторов</a> ·
+  <a href="https://www.tasteskill.dev/">Taste Skill</a>.
+  Источники в основном вендорские, описания функций стоит считать заявленными.
+</footer>
+</main>
+</div>
+
+<script>
+document.querySelectorAll(".filter button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".filter button").forEach(x=>x.classList.toggle("on",x===b));
+  const r=b.dataset.r;
+  document.querySelectorAll(".flow").forEach(f=>f.classList.toggle("dim",r!=="all"&&!f.dataset.roles.split(" ").includes(r)));
+}));
+const links=[...document.querySelectorAll(".toc a")];
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+e.target.id))}}),{rootMargin:"-20% 0px -70% 0px"});
+document.querySelectorAll("main section").forEach(s=>io.observe(s));
+</script>

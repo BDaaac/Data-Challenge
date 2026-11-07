@@ -1,0 +1,2462 @@
+{
+ "rows": [
+  {
+   "mode": "per_criterion",
+   "model": "haiku",
+   "dialog": "p1-ru-002",
+   "cost": 0.00161312,
+   "sec": 4.8,
+   "input_tokens": 1583,
+   "output_tokens": 2412,
+   "cache_read_input_tokens": 8932,
+   "cache_creation_input_tokens": 1276,
+   "answers": {
+    "c1": "yes",
+    "c2": "yes",
+    "c3": "na",
+    "c4": "10",
+    "c5": "yes",
+    "c6": "10",
+    "c7": "yes",
+    "c8": "no"
+   },
+   "total": 87.5
+  },
+  {
+   "mode": "per_criterion",
+   "model": "haiku",
+   "dialog": "p1-kz-001",
+   "cost": 0.00093448,
+   "sec": 2.4,
+   "input_tokens": 1583,
+   "output_tokens": 1153,
+   "cache_read_input_tokens": 7168,
+   "cache_creation_input_tokens": 1024,
+   "answers": {
+    "c1": "yes",
+    "c2": "na",
+    "c3": "na",
+    "c4": "20",
+    "c5": "no",
+    "c6": "10",
+    "c7": "yes",
+    "c8": "no"
+   },
+   "total": 76.92
+  },
+  {
+   "mode": "per_criterion",
+   "model": "haiku",
+   "dialog": "p4-ru-001",
+   "cost": 0.00266551,
+   "sec": 4.5,
+   "input_tokens": 1583,
+   "output_tokens": 3736,
+   "cache_read_input_tokens": 22946,
+   "cache_creation_input_tokens": 3278,
+   "answers": {
+    "c1": "yes",
+    "c2": "no",
+    "c3": "na",
+    "c4": "10",
+    "c5": "no",
+    "c6": "0",
+    "c7": "na",
+    "c8": "no"
+   },
+   "total": 26.67
+  },
+  {
+   "mode": "per_criterion",
+   "model": "sonnet",
+   "dialog": "p1-ru-002",
+   "cost": 0.0181924,
+   "sec": 2.5,
+   "input_tokens": 1583,
+   "output_tokens": 1005,
+   "cache_read_input_tokens": 8932,
+   "cache_creation_input_tokens": 1276,
+   "answers": {
+    "c1": "yes",
+    "c2": "yes",
+    "c3": "na",
+    "c4": "15",
+    "c5": "yes",
+    "c6": "7",
+    "c7": "yes",
+    "c8": "no"
+   },
+   "total": 88.12
+  },
+  {
+   "mode": "per_criterion",
+   "model": "sonnet",
+   "dialog": "p1-kz-001",
+   "cost": 0.0163196,
+   "sec": 2.0,
+   "input_tokens": 1583,
+   "output_tokens": 916,
+   "cache_read_input_tokens": 7168,
+   "cache_creation_input_tokens": 1024,
+   "answers": {
+    "c1": "yes",
+    "c2": "na",
+    "c3": "na",
+    "c4": "20",
+    "c5": "yes",
+    "c6": "10",
+    "c7": "no",
+    "c8": "no"
+   },
+   "total": 92.31
+  },
+  {
+   "mode": "per_criterion",
+   "model": "sonnet",
+   "dialog": "p4-ru-001",
+   "cost": 0.0273302,
+   "sec": 2.8,
+   "input_tokens": 1583,
+   "output_tokens": 1138,
+   "cache_read_input_tokens": 22946,
+   "cache_creation_input_tokens": 3278,
+   "answers": {
+    "c1": "yes",
+    "c2": "no",
+    "c3": "na",
+    "c4": "10",
+    "c5": "no",
+    "c6": "4",
+    "c7": "na",
+    "c8": "no"
+   },
+   "total": 34.67
+  },
+  {
+   "mode": "single",
+   "model": "haiku",
+   "dialog": "p1-ru-002",
+   "cost": 0.0010055,
+   "sec": 7.0,
+   "input_tokens": 2505,
+   "output_tokens": 1510,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0,
+   "answers": {
+    "c1": "yes",
+    "c2": "yes",
+    "c3": "na",
+    "c4": "10",
+    "c5": "yes",
+    "c6": "10",
+    "c7": "yes",
+    "c8": "no"
+   },
+   "total": 87.5
+  },
+  {
+   "mode": "single",
+   "model": "haiku",
+   "dialog": "p1-kz-001",
+   "cost": 0.0009153,
+   "sec": 6.8,
+   "input_tokens": 2253,
+   "output_tokens": 1380,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0,
+   "answers": {
+    "c1": "yes",
+    "c2": "na",
+    "c3": "na",
+    "c4": "20",
+    "c5": "yes",
+    "c6": "10",
+    "c7": "no",
+    "c8": "no"
+   },
+   "total": 92.31
+  },
+  {
+   "mode": "single",
+   "model": "haiku",
+   "dialog": "p4-ru-001",
+   "cost": 0.0017857,
+   "sec": 12.5,
+   "input_tokens": 4507,
+   "output_tokens": 2670,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0,
+   "answers": {
+    "c1": "yes",
+    "c2": "no",
+    "c3": "na",
+    "c4": "10",
+    "c5": "no",
+    "c6": "4",
+    "c7": "na",
+    "c8": "no"
+   },
+   "total": 34.67
+  },
+  {
+   "mode": "single",
+   "model": "sonnet",
+   "dialog": "p1-ru-002",
+   "cost": 0.01135,
+   "sec": 4.6,
+   "input_tokens": 2505,
+   "output_tokens": 634,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0,
+   "answers": {
+    "c1": "yes",
+    "c2": "yes",
+    "c3": "na",
+    "c4": "15",
+    "c5": "yes",
+    "c6": "7",
+    "c7": "yes",
+    "c8": "no"
+   },
+   "total": 88.12
+  },
+  {
+   "mode": "single",
+   "model": "sonnet",
+   "dialog": "p1-kz-001",
+   "cost": 0.010276,
+   "sec": 4.1,
+   "input_tokens": 2253,
+   "output_tokens": 577,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0,
+   "answers": {
+    "c1": "yes",
+    "c2": "na",
+    "c3": "na",
+    "c4": "20",
+    "c5": "yes",
+    "c6": "10",
+    "c7": "no",
+    "c8": "no"
+   },
+   "total": 92.31
+  },
+  {
+   "mode": "single",
+   "model": "sonnet",
+   "dialog": "p4-ru-001",
+   "cost": 0.015494,
+   "sec": 5.0,
+   "input_tokens": 4507,
+   "output_tokens": 648,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0,
+   "answers": {
+    "c1": "yes",
+    "c2": "no",
+    "c3": "na",
+    "c4": "5",
+    "c5": "no",
+    "c6": "4",
+    "c7": "na",
+    "c8": "no"
+   },
+   "total": 28.0
+  }
+ ],
+ "raw": {
+  "per_criterion|haiku|p1-ru-002": {
+   "c1": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [9], \"explanation\": \"В первом ответе оператора [9] есть приветствие «Здравствуйте» на русском языке клиента и представление «я Тимур». Приветствие бота [1] не учитывается.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 1276
+     },
+     "cache_creation_input_tokens": 1276,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 139,
+     "output_tokens": 87,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00021690000000000001,
+    "sec": 1.7,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "В первом ответе оператора [9] есть приветствие «Здравствуйте» на русском языке клиента и представление «я Тимур». Приветствие бота [1] не учитывается."
+    }
+   },
+   "c2": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [0, 9, 10, 14, 16], \"explanation\": \"Оператор учёл, что клиент сравнивал тарифы в старом отчёте и на сайте, и уточнил недостающее: где и на какую дату видели каждое название тарифа. Повторно известные детали он не переспрашивал.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 188,
+     "output_tokens": 467,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 350
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00026506,
+    "sec": 2.8,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      0,
+      9,
+      10,
+      14,
+      16
+     ],
+     "explanation": "Оператор учёл, что клиент сравнивал тарифы в старом отчёте и на сайте, и уточнил недостающее: где и на какую дату видели каждое название тарифа. Повторно известные детали он не переспрашивал."
+    }
+   },
+   "c3": {
+    "text": "{\"answer\": \"na\", \"evidence\": [11, 12, 14], \"explanation\": \"Оператор предложил идентификацию для проверки счёта, но клиент отказался («Давайте пока без неё»). Персональные данные оператор не раскрывал, поэтому условие N/A выполнено.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 200,
+     "output_tokens": 238,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 138
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00015176,
+    "sec": 1.9,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      11,
+      12,
+      14
+     ],
+     "explanation": "Оператор предложил идентификацию для проверки счёта, но клиент отказался («Давайте пока без неё»). Персональные данные оператор не раскрывал, поэтому условие N/A выполнено."
+    }
+   },
+   "c4": {
+    "text": "{\"answer\": \"10\", \"evidence\": [9, 11, 14, 16, 18], \"explanation\": \"Оператор дал конкретные шаги для сверки дат и пояснил, что для проверки счёта нужна идентификация, но причина изменения тарифа так и не объяснена и не указан путь её получения, например передача специалисту. Существенный вопрос клиента остался открытым.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 265,
+     "output_tokens": 454,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 324
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00026626,
+    "sec": 3.1,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      9,
+      11,
+      14,
+      16,
+      18
+     ],
+     "explanation": "Оператор дал конкретные шаги для сверки дат и пояснил, что для проверки счёта нужна идентификация, но причина изменения тарифа так и не объяснена и не указан путь её получения, например передача специалисту. Существенный вопрос клиента остался открытым."
+    }
+   },
+   "c5": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [9, 11, 14, 16, 18], \"explanation\": \"Оператор вежлив, признал возможное беспокойство клиента из-за изменения тарифа [9] и отреагировал на его конкретную проблему: объяснил расхождение дат и попросил описать страницу и дату [11, 14, 16]. Шаблонного ответа без связи с проблемой нет.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 145,
+     "output_tokens": 141,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 9.776e-05,
+    "sec": 1.4,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9,
+      11,
+      14,
+      16,
+      18
+     ],
+     "explanation": "Оператор вежлив, признал возможное беспокойство клиента из-за изменения тарифа [9] и отреагировал на его конкретную проблему: объяснил расхождение дат и попросил описать страницу и дату [11, 14, 16]. Шаблонного ответа без связи с проблемой нет."
+    }
+   },
+   "c6": {
+    "text": "{\"answer\": \"10\", \"evidence\": [9, 11, 14, 16, 18], \"explanation\": \"Реплики оператора ясные и связные, на вопросы клиента о подготовке данных и отправке отчёта оператор ответил прямо и заранее объяснил порядок проверки личности. Задержка первого ответа (около минуты после эскалации) может относиться к очереди и не считается сбоем управления диалогом.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 249,
+     "output_tokens": 791,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 648
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00043316,
+    "sec": 4.8,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      9,
+      11,
+      14,
+      16,
+      18
+     ],
+     "explanation": "Реплики оператора ясные и связные, на вопросы клиента о подготовке данных и отправке отчёта оператор ответил прямо и заранее объяснил порядок проверки личности. Задержка первого ответа (около минуты после эскалации) может относиться к очереди и не считается сбоем управления диалогом."
+    }
+   },
+   "c7": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [17, 18], \"explanation\": \"Оператор подвёл итог («начните со сверки дат») и предложил дальнейшую помощь («Если вопрос останется, напишите нам»), после чего попрощался («До свидания!»). Чат не оборвался, поэтому критерий выполнен.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 198,
+     "output_tokens": 115,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 9.006e-05,
+    "sec": 1.6,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      17,
+      18
+     ],
+     "explanation": "Оператор подвёл итог («начните со сверки дат») и предложил дальнейшую помощь («Если вопрос останется, напишите нам»), после чего попрощался («До свидания!»). Чат не оборвался, поэтому критерий выполнен."
+    }
+   },
+   "c8": {
+    "text": "{\"answer\": \"no\", \"evidence\": [9, 11, 14, 16, 18], \"explanation\": \"Оператор вежливо представился, не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию; реплики [11] и [14] лишь описывают штатную процедуру идентификации.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 199,
+     "output_tokens": 119,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 9.216000000000001e-05,
+    "sec": 1.4,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      9,
+      11,
+      14,
+      16,
+      18
+     ],
+     "explanation": "Оператор вежливо представился, не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию; реплики [11] и [14] лишь описывают штатную процедуру идентификации."
+    }
+   }
+  },
+  "per_criterion|haiku|p1-kz-001": {
+   "c1": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [9], \"explanation\": \"В первом ответе оператора [9] есть приветствие «Сәлеметсіз бе» на казахском языке клиента и представление «менің атым Аружан».\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 1024
+     },
+     "cache_creation_input_tokens": 1024,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 139,
+     "output_tokens": 80,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0001819,
+    "sec": 1.1,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "В первом ответе оператора [9] есть приветствие «Сәлеметсіз бе» на казахском языке клиента и представление «менің атым Аружан»."
+    }
+   },
+   "c2": {
+    "text": "{\"answer\": \"na\", \"evidence\": [0, 9], \"explanation\": \"Клиент спросил, где посмотреть свой текущий тариф, и для ответа данных хватало с самого начала: оператор сразу указал путь в веб-версии («Кабинет», тариф под ФИО). Уточнение не требовалось.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 188,
+     "output_tokens": 110,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 8.403999999999999e-05,
+    "sec": 1.1,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      0,
+      9
+     ],
+     "explanation": "Клиент спросил, где посмотреть свой текущий тариф, и для ответа данных хватало с самого начала: оператор сразу указал путь в веб-версии («Кабинет», тариф под ФИО). Уточнение не требовалось."
+    }
+   },
+   "c3": {
+    "text": "{\"answer\": \"na\", \"evidence\": [9, 10], \"explanation\": \"Клиент задал общий навигационный вопрос о тарифе (где посмотреть). Оператор дал инструкцию по разделу «Кабинет», персональные данные не раскрывались и защищённое действие не выполнялось, поэтому идентификация не требовалась.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 200,
+     "output_tokens": 118,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 8.923999999999999e-05,
+    "sec": 1.0,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      9,
+      10
+     ],
+     "explanation": "Клиент задал общий навигационный вопрос о тарифе (где посмотреть). Оператор дал инструкцию по разделу «Кабинет», персональные данные не раскрывались и защищённое действие не выполнялось, поэтому идентификация не требовалась."
+    }
+   },
+   "c4": {
+    "text": "{\"answer\": \"20\", \"evidence\": [0, 9, 10], \"explanation\": \"Оператор дал точный и выполнимый следующий шаг: открыть раздел «Кабинет» в веб-версии, где указан тариф. Клиент подтвердил, что нашёл информацию [10].\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 265,
+     "output_tokens": 331,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 230
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00020224000000000002,
+    "sec": 2.4,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "20",
+     "evidence": [
+      0,
+      9,
+      10
+     ],
+     "explanation": "Оператор дал точный и выполнимый следующий шаг: открыть раздел «Кабинет» в веб-версии, где указан тариф. Клиент подтвердил, что нашёл информацию [10]."
+    }
+   },
+   "c5": {
+    "text": "{\"answer\": \"no\", \"evidence\": [9, 10, 11], \"explanation\": \"Клиент не выражал недовольства и не описывал неудобство, поэтому условие для проверки эмпатии по конкретной проблеме не возникло. Оператор был вежлив («Сәлеметсіз бе», «Оқасы жоқ. Сау болыңыз!»), но критерий сформулирован как «Да» только при вежливости И реакции на проблему клиента, а конкретной проблемы или реакции на неудобство в диалоге нет.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 145,
+     "output_tokens": 184,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00011674,
+    "sec": 1.5,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      9,
+      10,
+      11
+     ],
+     "explanation": "Клиент не выражал недовольства и не описывал неудобство, поэтому условие для проверки эмпатии по конкретной проблеме не возникло. Оператор был вежлив («Сәлеметсіз бе», «Оқасы жоқ. Сау болыңыз!»), но критерий сформулирован как «Да» только при вежливости И реакции на проблему клиента, а конкретной проблемы или реакции на неудобство в диалоге нет."
+    }
+   },
+   "c6": {
+    "text": "{\"answer\": \"10\", \"evidence\": [9, 10, 11], \"explanation\": \"Оператор ясно и связно объяснил, где найти тариф (раздел «Кабинет», тариф под ФИО), без лишних пауз и ошибок; клиент сразу подтвердил понимание. Критерий для чата выполнен на высоком уровне.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 249,
+     "output_tokens": 119,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 9.464e-05,
+    "sec": 1.1,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      9,
+      10,
+      11
+     ],
+     "explanation": "Оператор ясно и связно объяснил, где найти тариф (раздел «Кабинет», тариф под ФИО), без лишних пауз и ошибок; клиент сразу подтвердил понимание. Критерий для чата выполнен на высоком уровне."
+    }
+   },
+   "c7": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [11], \"explanation\": \"Оператор попрощался фразой «Сау болыңыз!» и подвёл итог обращения, сообщив «Оқасы жоқ», что соответствует завершению чата; обрыва не было, поэтому N/A не применяется.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 198,
+     "output_tokens": 104,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 8.204e-05,
+    "sec": 1.2,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      11
+     ],
+     "explanation": "Оператор попрощался фразой «Сау болыңыз!» и подвёл итог обращения, сообщив «Оқасы жоқ», что соответствует завершению чата; обрыва не было, поэтому N/A не применяется."
+    }
+   },
+   "c8": {
+    "text": "{\"answer\": \"no\", \"evidence\": [9, 11], \"explanation\": \"Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию; реплика [9] содержит только инструкцию по поиску тарифа в веб-кабинете.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 199,
+     "output_tokens": 107,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 8.364e-05,
+    "sec": 1.3,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      9,
+      11
+     ],
+     "explanation": "Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию; реплика [9] содержит только инструкцию по поиску тарифа в веб-кабинете."
+    }
+   }
+  },
+  "per_criterion|haiku|p4-ru-001": {
+   "c1": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [12], \"explanation\": \"В первом ответе оператора [12] есть приветствие «Здравствуйте» на русском, языке клиента, и представление «меня зовут [Имя скрыто]», что по правилам считается указанием имени. Приветствие бота в [2] не учитывалось.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 3278
+     },
+     "cache_creation_input_tokens": 3278,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 139,
+     "output_tokens": 238,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 125
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00054265,
+    "sec": 1.7,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      12
+     ],
+     "explanation": "В первом ответе оператора [12] есть приветствие «Здравствуйте» на русском, языке клиента, и представление «меня зовут [Имя скрыто]», что по правилам считается указанием имени. Приветствие бота в [2] не учитывалось."
+    }
+   },
+   "c2": {
+    "text": "{\"answer\": \"no\", \"evidence\": [22, 24, 25, 29, 35], \"explanation\": \"Клиент сообщил, что раньше работал с брокером, портфель небольшой, и спрашивал, как может быть организована помощь, но у неё не выяснили конкретную задачу. Оператор ответил общими фразами о технической поддержке и предложил вопросы в общем виде ([29]), не уточнив, что именно нужно клиенту.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 188,
+     "output_tokens": 549,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 396
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00032608,
+    "sec": 3.7,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      22,
+      24,
+      25,
+      29,
+      35
+     ],
+     "explanation": "Клиент сообщил, что раньше работал с брокером, портфель небольшой, и спрашивал, как может быть организована помощь, но у неё не выяснили конкретную задачу. Оператор ответил общими фразами о технической поддержке и предложил вопросы в общем виде ([29]), не уточнив, что именно нужно клиенту."
+    }
+   },
+   "c3": {
+    "text": "{\"answer\": \"na\", \"evidence\": [23, 24, 25, 26, 27], \"explanation\": \"Клиент не запрашивал защищённых действий и не раскрывал персональных данных оператору; оператор не проводил операций с брокерским счётом и не раскрывал данных, поэтому идентификация не требовалась. Реплика [18] с маской данных сделана клиентом и не относится к действиям оператора.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 200,
+     "output_tokens": 141,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00012328,
+    "sec": 1.3,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      23,
+      24,
+      25,
+      26,
+      27
+     ],
+     "explanation": "Клиент не запрашивал защищённых действий и не раскрывал персональных данных оператору; оператор не проводил операций с брокерским счётом и не раскрывал данных, поэтому идентификация не требовалась. Реплика [18] с маской данных сделана клиентом и не относится к действиям оператора."
+    }
+   },
+   "c4": {
+    "text": "{\"answer\": \"10\", \"evidence\": [24, 25, 28, 29, 35, 39], \"explanation\": \"Оператор корректно объяснил, что это техподдержка и рекомендаций по ценным бумагам не дается, и привел пример помощи с выводом средств. Но вопрос клиента «что теперь делать без персонального менеджера» остался без ясного ответа и следующего шага, а фраза «Мы откроем делаем» неразборчива.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 265,
+     "output_tokens": 637,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 482
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00037778,
+    "sec": 3.9,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      24,
+      25,
+      28,
+      29,
+      35,
+      39
+     ],
+     "explanation": "Оператор корректно объяснил, что это техподдержка и рекомендаций по ценным бумагам не дается, и привел пример помощи с выводом средств. Но вопрос клиента «что теперь делать без персонального менеджера» остался без ясного ответа и следующего шага, а фраза «Мы откроем делаем» неразборчива."
+    }
+   },
+   "c5": {
+    "text": "{\"answer\": \"no\", \"evidence\": [31, 33, 39, 42], \"explanation\": \"Клиент выразил недовольство («отфутболили», потеря менеджера, «навязываюсь»), но оператор отвечал формально и отрицательно («Нет, не делаем»). Фраза «Я вас понимаю» в [42] шаблонная, она не сопровождается реакцией на конкретную проблему, а завершается перекладыванием вины на клиента («вас неправильно проинформировали»).\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 145,
+     "output_tokens": 449,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 278
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00027177999999999995,
+    "sec": 2.7,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      31,
+      33,
+      39,
+      42
+     ],
+     "explanation": "Клиент выразил недовольство («отфутболили», потеря менеджера, «навязываюсь»), но оператор отвечал формально и отрицательно («Нет, не делаем»). Фраза «Я вас понимаю» в [42] шаблонная, она не сопровождается реакцией на конкретную проблему, а завершается перекладыванием вины на клиента («вас неправильно проинформировали»)."
+    }
+   },
+   "c6": {
+    "text": "{\"answer\": \"0\", \"evidence\": [25, 27, 29, 30, 35, 37, 39], \"explanation\": \"Реплики оператора часто бессвязны («Мы откроем делаем», «Вы самостоятельно совершаете торги, никакую консультацию», «куда нужно зайти дально»), а ответ «Да» в [23] противоречит последующему объяснению в [25]. Клиенту приходилось уточнять («А что значит технической части?»).\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 249,
+     "output_tokens": 868,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 709
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00049168,
+    "sec": 4.5,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "0",
+     "evidence": [
+      25,
+      27,
+      29,
+      30,
+      35,
+      37,
+      39
+     ],
+     "explanation": "Реплики оператора часто бессвязны («Мы откроем делаем», «Вы самостоятельно совершаете торги, никакую консультацию», «куда нужно зайти дально»), а ответ «Да» в [23] противоречит последующему объяснению в [25]. Клиенту приходилось уточнять («А что значит технической части?»)."
+    }
+   },
+   "c7": {
+    "text": "{\"answer\": \"na\", \"evidence\": [42, 43], \"explanation\": \"Клиент завершил разговор сразу после реплики оператора [42], то есть чат оборвался по инициативе клиента до возможности закрыть обращение. Оператор не попрощался и не подвёл итог, но по правилу уход клиента даёт N/A.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 198,
+     "output_tokens": 729,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 614
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00041708000000000007,
+    "sec": 4.2,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      42,
+      43
+     ],
+     "explanation": "Клиент завершил разговор сразу после реплики оператора [42], то есть чат оборвался по инициативе клиента до возможности закрыть обращение. Оператор не попрощался и не подвёл итог, но по правилу уход клиента даёт N/A."
+    }
+   },
+   "c8": {
+    "text": "{\"answer\": \"no\", \"evidence\": [25, 26, 27, 29, 35, 39, 42], \"explanation\": \"Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальной информации; он корректно объяснил ограничения технической поддержки и отказ от консультаций по ценным бумагам.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 199,
+     "output_tokens": 125,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.00011518,
+    "sec": 1.1,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      25,
+      26,
+      27,
+      29,
+      35,
+      39,
+      42
+     ],
+     "explanation": "Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальной информации; он корректно объяснил ограничения технической поддержки и отказ от консультаций по ценным бумагам."
+    }
+   }
+  },
+  "per_criterion|sonnet|p1-ru-002": {
+   "c1": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [9], \"explanation\": \"В первом ответе оператора [9] есть приветствие на русском («Здравствуйте») и представление по имени («я Тимур»).\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 1276
+     },
+     "cache_creation_input_tokens": 1276,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 139,
+     "output_tokens": 71,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.004178,
+    "sec": 1.5,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "В первом ответе оператора [9] есть приветствие на русском («Здравствуйте») и представление по имени («я Тимур»)."
+    }
+   },
+   "c2": {
+    "text": "{\"answer\":\"yes\",\"evidence\":[9,10,11],\"explanation\":\"Клиент сообщил, что тариф изменился и ему нужна причина. Оператор уточнил, где именно сравнивались названия тарифов [9], и получил ответ про старый отчёт и сайт [10]. Уже известное оператор не переспрашивал, а ответил с учётом полученных деталей [11].\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 188,
+     "output_tokens": 135,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0019812000000000002,
+    "sec": 1.6,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9,
+      10,
+      11
+     ],
+     "explanation": "Клиент сообщил, что тариф изменился и ему нужна причина. Оператор уточнил, где именно сравнивались названия тарифов [9], и получил ответ про старый отчёт и сайт [10]. Уже известное оператор не переспрашивал, а ответил с учётом полученных деталей [11]."
+    }
+   },
+   "c3": {
+    "text": "{\"answer\":\"na\",\"evidence\":[11,12,14],\"explanation\":\"Оператор предложил идентификацию для проверки конкретного счёта (реплики 11, 14), клиент отказался (12). Персональные данные клиента не раскрывались, только общие пояснения, поэтому критерий неприменим.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 200,
+     "output_tokens": 106,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0017152,
+    "sec": 1.8,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      11,
+      12,
+      14
+     ],
+     "explanation": "Оператор предложил идентификацию для проверки конкретного счёта (реплики 11, 14), клиент отказался (12). Персональные данные клиента не раскрывались, только общие пояснения, поэтому критерий неприменим."
+    }
+   },
+   "c4": {
+    "text": "{\"answer\": \"15\", \"evidence\": [11, 14, 16], \"explanation\": \"Оператор объяснил возможную причину расхождения (разные даты отчёта и кабинета), честно сказал, что причину по переписке не видит, и дал понятный следующий шаг: сверить даты, описать страницы и пройти идентификацию при проверке счёта. Однако сам вопрос о причине смены тарифа не решён, не предложено оформить обращение на проверку, и не указано, где в кабинете посмотреть дату смены тарифа.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 265,
+     "output_tokens": 183,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0026152,
+    "sec": 2.3,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "15",
+     "evidence": [
+      11,
+      14,
+      16
+     ],
+     "explanation": "Оператор объяснил возможную причину расхождения (разные даты отчёта и кабинета), честно сказал, что причину по переписке не видит, и дал понятный следующий шаг: сверить даты, описать страницы и пройти идентификацию при проверке счёта. Однако сам вопрос о причине смены тарифа не решён, не предложено оформить обращение на проверку, и не указано, где в кабинете посмотреть дату смены тарифа."
+    }
+   },
+   "c5": {
+    "text": "{\"answer\":\"yes\",\"evidence\":[9,11,16],\"explanation\":\"Оператор вежлив и отреагировал на конкретную проблему клиента: в [9] выразил понимание беспокойства из-за неожиданной смены тарифа, в [11] объяснил возможную причину расхождения, в [16] ответил на уточняющий вопрос. Грубости нет, тон корректный.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 145,
+     "output_tokens": 134,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0018852,
+    "sec": 1.9,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9,
+      11,
+      16
+     ],
+     "explanation": "Оператор вежлив и отреагировал на конкретную проблему клиента: в [9] выразил понимание беспокойства из-за неожиданной смены тарифа, в [11] объяснил возможную причину расхождения, в [16] ответил на уточняющий вопрос. Грубости нет, тон корректный."
+    }
+   },
+   "c6": {
+    "text": "{\"answer\": \"7\", \"evidence\": [9, 11, 14], \"explanation\": \"Ответы в целом ясные и связные, но есть один заметный сбой: оператор ответил на первую реплику только через ~56 секунд после эскалации (реплики 8–9) и не предупредил об ожидании. Также ответы на реплики 12–13 заняли около 50 секунд без предупреждения. Клиент всё понял и смог продолжить без переспросов.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 249,
+     "output_tokens": 155,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0023031999999999996,
+    "sec": 2.5,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "7",
+     "evidence": [
+      9,
+      11,
+      14
+     ],
+     "explanation": "Ответы в целом ясные и связные, но есть один заметный сбой: оператор ответил на первую реплику только через ~56 секунд после эскалации (реплики 8–9) и не предупредил об ожидании. Также ответы на реплики 12–13 заняли около 50 секунд без предупреждения. Клиент всё понял и смог продолжить без переспросов."
+    }
+   },
+   "c7": {
+    "text": "{\"answer\":\"yes\",\"evidence\":[18],\"explanation\":\"В реплике [18] оператор подвёл итог («начните со сверки дат»), предложил дальнейшую помощь («Если вопрос останется, напишите нам») и попрощался («До свидания!»). Чат не оборвался, клиент сообщил, что продолжит сверку.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 198,
+     "output_tokens": 119,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0018412,
+    "sec": 1.9,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      18
+     ],
+     "explanation": "В реплике [18] оператор подвёл итог («начните со сверки дат»), предложил дальнейшую помощь («Если вопрос останется, напишите нам») и попрощался («До свидания!»). Чат не оборвался, клиент сообщил, что продолжит сверку."
+    }
+   },
+   "c8": {
+    "text": "{\"answer\":\"no\",\"evidence\":[9,11,14,16,18],\"explanation\":\"Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию. Он корректно запросил идентификацию перед проверкой счёта.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1276,
+     "inference_geo": "global",
+     "input_tokens": 199,
+     "output_tokens": 102,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0016732000000000001,
+    "sec": 1.8,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      9,
+      11,
+      14,
+      16,
+      18
+     ],
+     "explanation": "Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию. Он корректно запросил идентификацию перед проверкой счёта."
+    }
+   }
+  },
+  "per_criterion|sonnet|p1-kz-001": {
+   "c1": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [9], \"explanation\": \"В первом ответе оператора [9] есть приветствие на казахском («Сәлеметсіз бе») и представление по имени («менің атым Аружан»), то есть язык клиента соблюдён.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 1024
+     },
+     "cache_creation_input_tokens": 1024,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 139,
+     "output_tokens": 92,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.003758,
+    "sec": 1.6,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "В первом ответе оператора [9] есть приветствие на казахском («Сәлеметсіз бе») и представление по имени («менің атым Аружан»), то есть язык клиента соблюдён."
+    }
+   },
+   "c2": {
+    "text": "{\"answer\": \"na\", \"evidence\": [0, 4, 9], \"explanation\": \"Клиент спросил, где посмотреть тариф, и сообщил, что сидит за компьютером. Для ответа данных хватало с самого начала, поэтому уточнение не требовалось. Оператор сразу дал подходящую инструкцию для веб-версии.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 188,
+     "output_tokens": 120,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0017808,
+    "sec": 1.9,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      0,
+      4,
+      9
+     ],
+     "explanation": "Клиент спросил, где посмотреть тариф, и сообщил, что сидит за компьютером. Для ответа данных хватало с самого начала, поэтому уточнение не требовалось. Оператор сразу дал подходящую инструкцию для веб-версии."
+    }
+   },
+   "c3": {
+    "text": "{\"answer\": \"na\", \"evidence\": [0, 9], \"explanation\": \"Клиент спросил, где посмотреть свой тариф, и оператор дал только навигационную подсказку по веб-кабинету. Персональные данные клиента не раскрывались, защищённых действий не было, поэтому идентификация не требовалась.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 200,
+     "output_tokens": 111,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0017148,
+    "sec": 1.9,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      0,
+      9
+     ],
+     "explanation": "Клиент спросил, где посмотреть свой тариф, и оператор дал только навигационную подсказку по веб-кабинету. Персональные данные клиента не раскрывались, защищённых действий не было, поэтому идентификация не требовалась."
+    }
+   },
+   "c4": {
+    "text": "{\"answer\": \"20\", \"evidence\": [9, 10], \"explanation\": \"Клиент спросил, где посмотреть текущий тариф. Оператор объяснил: в веб-версии открыть раздел «Кабинет», тариф указан под ФИО. Клиент подтвердил, что нашёл ([10]), поэтому вопрос закрыт полностью.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 265,
+     "output_tokens": 124,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0019748,
+    "sec": 1.5,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "20",
+     "evidence": [
+      9,
+      10
+     ],
+     "explanation": "Клиент спросил, где посмотреть текущий тариф. Оператор объяснил: в веб-версии открыть раздел «Кабинет», тариф указан под ФИО. Клиент подтвердил, что нашёл ([10]), поэтому вопрос закрыт полностью."
+    }
+   },
+   "c5": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [9, 11], \"explanation\": \"Оператор вежлив: поздоровался, представился, сразу дал конкретный ответ на вопрос клиента и вежливо завершил диалог. Клиент недовольства или неудобства не выражал, поэтому особой реакции не требовалось.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 145,
+     "output_tokens": 112,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0016148,
+    "sec": 1.8,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9,
+      11
+     ],
+     "explanation": "Оператор вежлив: поздоровался, представился, сразу дал конкретный ответ на вопрос клиента и вежливо завершил диалог. Клиент недовольства или неудобства не выражал, поэтому особой реакции не требовалось."
+    }
+   },
+   "c6": {
+    "text": "{\"answer\": \"10\", \"evidence\": [9, 10, 11], \"explanation\": \"Оператор ответил ясно и по делу: указал, где в веб-версии искать тариф («Кабинет»), клиент сразу нашёл и не переспрашивал. Реплики связные и грамотные, диалог завершён корректно. Задержка первого ответа (около 37 с после эскалации) не повлияла на понимание.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 249,
+     "output_tokens": 141,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0021128,
+    "sec": 2.0,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      9,
+      10,
+      11
+     ],
+     "explanation": "Оператор ответил ясно и по делу: указал, где в веб-версии искать тариф («Кабинет»), клиент сразу нашёл и не переспрашивал. Реплики связные и грамотные, диалог завершён корректно. Задержка первого ответа (около 37 с после эскалации) не повлияла на понимание."
+    }
+   },
+   "c7": {
+    "text": "{\"answer\":\"no\",\"evidence\":[11],\"explanation\":\"В реплике [11] оператор попрощался («Сау болыңыз!»), но не подвёл итог и не предложил дальнейшую помощь, например спросить, есть ли ещё вопросы. Клиент не прерывал чат, поэтому N/A не подходит.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 198,
+     "output_tokens": 114,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0017408,
+    "sec": 1.8,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      11
+     ],
+     "explanation": "В реплике [11] оператор попрощался («Сау болыңыз!»), но не подвёл итог и не предложил дальнейшую помощь, например спросить, есть ли ещё вопросы. Клиент не прерывал чат, поэтому N/A не подходит."
+    }
+   },
+   "c8": {
+    "text": "{\"answer\": \"no\", \"evidence\": [9, 11], \"explanation\": \"Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию. Он лишь подсказал, где в личном кабинете посмотреть тариф.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 1024,
+     "inference_geo": "global",
+     "input_tokens": 199,
+     "output_tokens": 102,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0016228,
+    "sec": 1.5,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      9,
+      11
+     ],
+     "explanation": "Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию. Он лишь подсказал, где в личном кабинете посмотреть тариф."
+    }
+   }
+  },
+  "per_criterion|sonnet|p4-ru-001": {
+   "c1": {
+    "text": "{\"answer\": \"yes\", \"evidence\": [12], \"explanation\": \"В первой реплике оператор поздоровался по-русски («Здравствуйте») и представился: маска [Имя скрыто] в приветствии засчитывается как имя. Затем оператор предложил помощь.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 3278
+     },
+     "cache_creation_input_tokens": 3278,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 139,
+     "output_tokens": 95,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.009423,
+    "sec": 1.7,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      12
+     ],
+     "explanation": "В первой реплике оператор поздоровался по-русски («Здравствуйте») и представился: маска [Имя скрыто] в приветствии засчитывается как имя. Затем оператор предложил помощь."
+    }
+   },
+   "c2": {
+    "text": "{\"answer\":\"no\",\"evidence\":[12,23,25,29,35,42],\"explanation\":\"Клиентка не объяснила, что ей нужно, и оператор не уточнил запрос: о чём именно она хочет узнать, какие у неё вопросы, есть ли персональный менеджер. Он сразу стал отвечать общими фразами о технической поддержке. В [29] он спросил «Возможно, у вас возникнут какие либо вопросы?», но это общий вопрос, а не выявление потребности.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 188,
+     "output_tokens": 173,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0027616,
+    "sec": 2.2,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      12,
+      23,
+      25,
+      29,
+      35,
+      42
+     ],
+     "explanation": "Клиентка не объяснила, что ей нужно, и оператор не уточнил запрос: о чём именно она хочет узнать, какие у неё вопросы, есть ли персональный менеджер. Он сразу стал отвечать общими фразами о технической поддержке. В [29] он спросил «Возможно, у вас возникнут какие либо вопросы?», но это общий вопрос, а не выявление потребности."
+    }
+   },
+   "c3": {
+    "text": "{\"answer\": \"na\", \"evidence\": [25, 27, 29, 35], \"explanation\": \"Клиент задавал общие вопросы о работе поддержки и брокера. Персональные данные по счёту не раскрывались, защищённых действий не выполнялось, поэтому идентификация не требовалась.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 200,
+     "output_tokens": 103,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0020856,
+    "sec": 1.8,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      25,
+      27,
+      29,
+      35
+     ],
+     "explanation": "Клиент задавал общие вопросы о работе поддержки и брокера. Персональные данные по счёту не раскрывались, защищённых действий не выполнялось, поэтому идентификация не требовалась."
+    }
+   },
+   "c4": {
+    "text": "{\"answer\":\"10\",\"evidence\":[25,27,29,35,39,42],\"explanation\":\"Оператор корректно объяснил границы поддержки: техническая помощь без инвестконсультаций, а консультацию даёт персональный менеджер. Но на вопрос клиента, что делать без закреплённого менеджера, конкретного следующего шага нет: ни проверки статуса менеджера, ни передачи запроса, ни пути получения помощи. Запрос закрыт лишь частично, существенный вопрос остался открытым.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 265,
+     "output_tokens": 180,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0029855999999999997,
+    "sec": 2.3,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      25,
+      27,
+      29,
+      35,
+      39,
+      42
+     ],
+     "explanation": "Оператор корректно объяснил границы поддержки: техническая помощь без инвестконсультаций, а консультацию даёт персональный менеджер. Но на вопрос клиента, что делать без закреплённого менеджера, конкретного следующего шага нет: ни проверки статуса менеджера, ни передачи запроса, ни пути получения помощи. Запрос закрыт лишь частично, существенный вопрос остался открытым."
+    }
+   },
+   "c5": {
+    "text": "{\"answer\":\"no\",\"evidence\":[29,31,33,39,42],\"explanation\":\"Клиент выразил недовольство: его «отфутболили», он чувствует, что навязывается. Оператор не проявил реальной эмпатии и не предложил решения, например связь с персональным менеджером или передачу обращения. В [42] есть формальное «я вас понимаю», но дальше оператор перекладывает вину на неверную информацию и задаёт неуместный вопрос. Односложные ответы [23], [39] и отсутствие участия усиливают впечатление безразличия.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 145,
+     "output_tokens": 194,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0028856,
+    "sec": 2.8,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      29,
+      31,
+      33,
+      39,
+      42
+     ],
+     "explanation": "Клиент выразил недовольство: его «отфутболили», он чувствует, что навязывается. Оператор не проявил реальной эмпатии и не предложил решения, например связь с персональным менеджером или передачу обращения. В [42] есть формальное «я вас понимаю», но дальше оператор перекладывает вину на неверную информацию и задаёт неуместный вопрос. Односложные ответы [23], [39] и отсутствие участия усиливают впечатление безразличия."
+    }
+   },
+   "c6": {
+    "text": "{\"answer\":\"4\",\"evidence\":[14,16,25,26,29,37,42],\"explanation\":\"Клиенту пришлось переспрашивать: имя оператора он не расслышал и уточнял его сам [13-17]. Реплики [26] и [37] («Мы откроем делаем») путаные и неясные, а [25], [29] повторяют одно и то же без конкретики. Критичной бессвязности нет, поэтому не 0, но качество формулировок снижено.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 249,
+     "output_tokens": 160,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0027535999999999997,
+    "sec": 2.4,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "4",
+     "evidence": [
+      14,
+      16,
+      25,
+      26,
+      29,
+      37,
+      42
+     ],
+     "explanation": "Клиенту пришлось переспрашивать: имя оператора он не расслышал и уточнял его сам [13-17]. Реплики [26] и [37] («Мы откроем делаем») путаные и неясные, а [25], [29] повторяют одно и то же без конкретики. Критичной бессвязности нет, поэтому не 0, но качество формулировок снижено."
+    }
+   },
+   "c7": {
+    "text": "{\"answer\": \"na\", \"evidence\": [42, 43, 44], \"explanation\": \"Клиент сам завершил разговор [43] сразу после последней реплики оператора [42], в которой он задал вопрос клиенту. У оператора не было возможности подвести итог и попрощаться, поэтому критерий неприменим.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 198,
+     "output_tokens": 109,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0021416,
+    "sec": 1.7,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      42,
+      43,
+      44
+     ],
+     "explanation": "Клиент сам завершил разговор [43] сразу после последней реплики оператора [42], в которой он задал вопрос клиенту. У оператора не было возможности подвести итог и попрощаться, поэтому критерий неприменим."
+    }
+   },
+   "c8": {
+    "text": "{\"answer\":\"no\",\"evidence\":[25,29,42],\"explanation\":\"Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию. Он объяснил ограничения технической поддержки; реплика [42] о том, что клиента «неправильно проинформировали», не является оскорблением.\"}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 3278,
+     "inference_geo": "global",
+     "input_tokens": 199,
+     "output_tokens": 124,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0022936,
+    "sec": 1.8,
+    "stop": "end_turn",
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      25,
+      29,
+      42
+     ],
+     "explanation": "Оператор не оскорблял клиента, не предлагал платных услуг в обход компании и не раскрывал конфиденциальную информацию. Он объяснил ограничения технической поддержки; реплика [42] о том, что клиента «неправильно проинформировали», не является оскорблением."
+    }
+   }
+  },
+  "single|haiku|p1-ru-002": {
+   "_call": {
+    "text": "{\"c1\": {\"answer\": \"yes\", \"evidence\": [9], \"explanation\": \"В первом ответе оператор поздоровался по-русски и представился именем «Тимур».\"}, \"c2\": {\"answer\": \"yes\", \"evidence\": [9, 10, 11, 14, 16], \"explanation\": \"Оператор учёл, что клиент сверял названия тарифов в старом отчёте и на сайте, и уточнил недостающие детали: где и на какую дату были видны тарифы.\"}, \"c3\": {\"answer\": \"na\", \"evidence\": [11, 12], \"explanation\": \"Персональные данные и защищённые действия не раскрывались; клиент отказался от идентификации («Давайте пока без неё»).\"}, \"c4\": {\"answer\": \"10\", \"evidence\": [11, 14, 16, 18], \"explanation\": \"Часть запроса закрыта: даны следующие шаги и способ сверки дат. Главный вопрос о причине смены тарифа остался открытым, оператор не смог её объяснить.\"}, \"c5\": {\"answer\": \"yes\", \"evidence\": [9], \"explanation\": \"Оператор вежлив и отреагировал на беспокойство клиента из-за неожиданного изменения тарифа.\"}, \"c6\": {\"answer\": \"10\", \"evidence\": [9, 11, 14, 16, 18], \"explanation\": \"Ответы ясные и связные, формулировки понятны, клиенту не приходилось переспрашивать.\"}, \"c7\": {\"answer\": \"yes\", \"evidence\": [18], \"explanation\": \"Оператор дал итог и следующий шаг («начните со сверки дат», «напишите нам»), затем попрощался.\"}, \"c8\": {\"answer\": \"no\", \"evidence\": [], \"explanation\": \"Оскорблений, предложения платной услуги в обход компании и раскрытия конфиденциальной информации нет.\"}}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 2505,
+     "output_tokens": 1510,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 895
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0010055,
+    "sec": 7.0,
+    "stop": "end_turn"
+   },
+   "c1": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "В первом ответе оператор поздоровался по-русски и представился именем «Тимур»."
+    }
+   },
+   "c2": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9,
+      10,
+      11,
+      14,
+      16
+     ],
+     "explanation": "Оператор учёл, что клиент сверял названия тарифов в старом отчёте и на сайте, и уточнил недостающие детали: где и на какую дату были видны тарифы."
+    }
+   },
+   "c3": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      11,
+      12
+     ],
+     "explanation": "Персональные данные и защищённые действия не раскрывались; клиент отказался от идентификации («Давайте пока без неё»)."
+    }
+   },
+   "c4": {
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      11,
+      14,
+      16,
+      18
+     ],
+     "explanation": "Часть запроса закрыта: даны следующие шаги и способ сверки дат. Главный вопрос о причине смены тарифа остался открытым, оператор не смог её объяснить."
+    }
+   },
+   "c5": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "Оператор вежлив и отреагировал на беспокойство клиента из-за неожиданного изменения тарифа."
+    }
+   },
+   "c6": {
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      9,
+      11,
+      14,
+      16,
+      18
+     ],
+     "explanation": "Ответы ясные и связные, формулировки понятны, клиенту не приходилось переспрашивать."
+    }
+   },
+   "c7": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      18
+     ],
+     "explanation": "Оператор дал итог и следующий шаг («начните со сверки дат», «напишите нам»), затем попрощался."
+    }
+   },
+   "c8": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [],
+     "explanation": "Оскорблений, предложения платной услуги в обход компании и раскрытия конфиденциальной информации нет."
+    }
+   }
+  },
+  "single|haiku|p1-kz-001": {
+   "_call": {
+    "text": "{\"c1\": {\"answer\": \"yes\", \"evidence\": [9], \"explanation\": \"В первом ответе оператор поздоровался на казахском («Сәлеметсіз бе») и представился («менің атым Аружан»).\"}, \"c2\": {\"answer\": \"na\", \"evidence\": [0, 9], \"explanation\": \"Клиент спросил, где посмотреть тариф. Для ответа на этот вопрос дополнительных данных не требовалось.\"}, \"c3\": {\"answer\": \"na\", \"evidence\": [0, 9], \"explanation\": \"Запрос был навигационным (где найти тариф), идентификация не требовалась.\"}, \"c4\": {\"answer\": \"20\", \"evidence\": [9], \"explanation\": \"Оператор дал верный и понятный путь: раздел «Кабинет» в веб-версии, тариф указан под именем клиента. Основной вопрос закрыт.\"}, \"c5\": {\"answer\": \"yes\", \"evidence\": [9, 11], \"explanation\": \"Оператор вежлив и отвечает на благодарность клиента («Оқасы жоқ»). Недовольства или неудобства клиент не выражал.\"}, \"c6\": {\"answer\": \"10\", \"evidence\": [9], \"explanation\": \"Ответ ясный, связный, без неуместных выражений и без вынуждения клиента переспрашивать.\"}, \"c7\": {\"answer\": \"no\", \"evidence\": [11], \"explanation\": \"Оператор попрощался («Сау болыңыз!»), но не подвёл итог и не предложил дальнейшую помощь.\"}, \"c8\": {\"answer\": \"no\", \"evidence\": [], \"explanation\": \"Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальной информации нет.\"}}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 2253,
+     "output_tokens": 1380,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 803
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0009153,
+    "sec": 6.8,
+    "stop": "end_turn"
+   },
+   "c1": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "В первом ответе оператор поздоровался на казахском («Сәлеметсіз бе») и представился («менің атым Аружан»)."
+    }
+   },
+   "c2": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      0,
+      9
+     ],
+     "explanation": "Клиент спросил, где посмотреть тариф. Для ответа на этот вопрос дополнительных данных не требовалось."
+    }
+   },
+   "c3": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      0,
+      9
+     ],
+     "explanation": "Запрос был навигационным (где найти тариф), идентификация не требовалась."
+    }
+   },
+   "c4": {
+    "parsed": {
+     "answer": "20",
+     "evidence": [
+      9
+     ],
+     "explanation": "Оператор дал верный и понятный путь: раздел «Кабинет» в веб-версии, тариф указан под именем клиента. Основной вопрос закрыт."
+    }
+   },
+   "c5": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9,
+      11
+     ],
+     "explanation": "Оператор вежлив и отвечает на благодарность клиента («Оқасы жоқ»). Недовольства или неудобства клиент не выражал."
+    }
+   },
+   "c6": {
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      9
+     ],
+     "explanation": "Ответ ясный, связный, без неуместных выражений и без вынуждения клиента переспрашивать."
+    }
+   },
+   "c7": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      11
+     ],
+     "explanation": "Оператор попрощался («Сау болыңыз!»), но не подвёл итог и не предложил дальнейшую помощь."
+    }
+   },
+   "c8": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [],
+     "explanation": "Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальной информации нет."
+    }
+   }
+  },
+  "single|haiku|p4-ru-001": {
+   "_call": {
+    "text": "{\"c1\": {\"answer\": \"yes\", \"evidence\": [12], \"explanation\": \"В первом ответе оператор поздоровался на русском языке клиента и представился (имя скрыто маской), затем предложил помощь.\"}, \"c2\": {\"answer\": \"no\", \"evidence\": [24, 25, 29], \"explanation\": \"Запрос клиента был размытым (как вы помогаете, рекомендуете ли покупки), но оператор сразу ответил общими фразами и не уточнил, что именно нужно клиенту.\"}, \"c3\": {\"answer\": \"na\", \"evidence\": [24, 27], \"explanation\": \"Оператор не выполнял защищённых действий и не раскрывал данных счёта; запрос был общим, поэтому идентификация не требовалась.\"}, \"c4\": {\"answer\": \"10\", \"evidence\": [25, 26, 35], \"explanation\": \"Оператор объяснил границы технической поддержки, но ключевой вопрос клиента (как получить помощь после потери персонального менеджера и как вывести деньги) остался открытым, а следующий шаг не дан.\"}, \"c5\": {\"answer\": \"no\", \"evidence\": [31, 33, 42], \"explanation\": \"Клиент описал неудобство (увольнение менеджера, «отфутболили», чувство навязывания), но оператор не отреагировал на конкретную проблему и ответил отстранённо: «Мы такими делами не занимаемся».\"}, \"c6\": {\"answer\": \"4\", \"evidence\": [23, 25, 37, 39], \"explanation\": \"Реплики путаные и противоречивые (ответ «Да» и затем «Нет» на один вопрос, «Мы откроем делаем»), клиенту приходится переспрашивать и уточнять.\"}, \"c7\": {\"answer\": \"na\", \"evidence\": [42, 43], \"explanation\": \"Клиент завершил разговор сразу после ответа оператора, поэтому оператор не получил возможности подвести итог и попрощаться.\"}, \"c8\": {\"answer\": \"no\", \"evidence\": [25], \"explanation\": \"Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальной информации оператором не было.\"}}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 4507,
+     "output_tokens": 2670,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 1946
+     },
+     "speed": "standard"
+    },
+    "cost": 0.0017857,
+    "sec": 12.5,
+    "stop": "end_turn"
+   },
+   "c1": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      12
+     ],
+     "explanation": "В первом ответе оператор поздоровался на русском языке клиента и представился (имя скрыто маской), затем предложил помощь."
+    }
+   },
+   "c2": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      24,
+      25,
+      29
+     ],
+     "explanation": "Запрос клиента был размытым (как вы помогаете, рекомендуете ли покупки), но оператор сразу ответил общими фразами и не уточнил, что именно нужно клиенту."
+    }
+   },
+   "c3": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      24,
+      27
+     ],
+     "explanation": "Оператор не выполнял защищённых действий и не раскрывал данных счёта; запрос был общим, поэтому идентификация не требовалась."
+    }
+   },
+   "c4": {
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      25,
+      26,
+      35
+     ],
+     "explanation": "Оператор объяснил границы технической поддержки, но ключевой вопрос клиента (как получить помощь после потери персонального менеджера и как вывести деньги) остался открытым, а следующий шаг не дан."
+    }
+   },
+   "c5": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      31,
+      33,
+      42
+     ],
+     "explanation": "Клиент описал неудобство (увольнение менеджера, «отфутболили», чувство навязывания), но оператор не отреагировал на конкретную проблему и ответил отстранённо: «Мы такими делами не занимаемся»."
+    }
+   },
+   "c6": {
+    "parsed": {
+     "answer": "4",
+     "evidence": [
+      23,
+      25,
+      37,
+      39
+     ],
+     "explanation": "Реплики путаные и противоречивые (ответ «Да» и затем «Нет» на один вопрос, «Мы откроем делаем»), клиенту приходится переспрашивать и уточнять."
+    }
+   },
+   "c7": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      42,
+      43
+     ],
+     "explanation": "Клиент завершил разговор сразу после ответа оператора, поэтому оператор не получил возможности подвести итог и попрощаться."
+    }
+   },
+   "c8": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      25
+     ],
+     "explanation": "Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальной информации оператором не было."
+    }
+   }
+  },
+  "single|sonnet|p1-ru-002": {
+   "_call": {
+    "text": "{\"c1\":{\"answer\":\"yes\",\"evidence\":[9],\"explanation\":\"В первом ответе оператор поздоровался и представился именем Тимур.\"},\"c2\":{\"answer\":\"yes\",\"evidence\":[9,10],\"explanation\":\"Клиент уже сказал, что видит новый тариф. Оператор уточнил недостающее: где именно сравнивались названия. Уже известное не переспрашивал.\"},\"c3\":{\"answer\":\"na\",\"evidence\":[11,12,14],\"explanation\":\"Оператор предложил идентификацию для проверки счёта, клиент отказался. Персональные данные не раскрывались.\"},\"c4\":{\"answer\":\"15\",\"evidence\":[11,14,16],\"explanation\":\"Оператор объяснил возможную причину расхождения (разные даты) и дал следующий шаг: сверить даты и описать, где и когда клиент видел каждый тариф. Но не предложил конкретный канал или процедуру проверки после идентификации, и причину по существу не назвал.\"},\"c5\":{\"answer\":\"yes\",\"evidence\":[9],\"explanation\":\"Оператор отреагировал на беспокойство клиента из-за неожиданной смены тарифа и вёл диалог вежливо.\"},\"c6\":{\"answer\":\"7\",\"evidence\":[9,11,14],\"explanation\":\"Ответы в целом понятные. Но между репликами клиента и ответами оператора были большие паузы (например, [13]→[14]), а в [14] идентификация повторена без нового содержания.\"},\"c7\":{\"answer\":\"yes\",\"evidence\":[18],\"explanation\":\"Оператор подвёл итог (начать со сверки дат), предложил написать при необходимости и попрощался.\"},\"c8\":{\"answer\":\"no\",\"evidence\":[9,11,14,16,18],\"explanation\":\"Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальных данных нет.\"}}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 2505,
+     "output_tokens": 634,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.01135,
+    "sec": 4.6,
+    "stop": "end_turn"
+   },
+   "c1": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "В первом ответе оператор поздоровался и представился именем Тимур."
+    }
+   },
+   "c2": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9,
+      10
+     ],
+     "explanation": "Клиент уже сказал, что видит новый тариф. Оператор уточнил недостающее: где именно сравнивались названия. Уже известное не переспрашивал."
+    }
+   },
+   "c3": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      11,
+      12,
+      14
+     ],
+     "explanation": "Оператор предложил идентификацию для проверки счёта, клиент отказался. Персональные данные не раскрывались."
+    }
+   },
+   "c4": {
+    "parsed": {
+     "answer": "15",
+     "evidence": [
+      11,
+      14,
+      16
+     ],
+     "explanation": "Оператор объяснил возможную причину расхождения (разные даты) и дал следующий шаг: сверить даты и описать, где и когда клиент видел каждый тариф. Но не предложил конкретный канал или процедуру проверки после идентификации, и причину по существу не назвал."
+    }
+   },
+   "c5": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "Оператор отреагировал на беспокойство клиента из-за неожиданной смены тарифа и вёл диалог вежливо."
+    }
+   },
+   "c6": {
+    "parsed": {
+     "answer": "7",
+     "evidence": [
+      9,
+      11,
+      14
+     ],
+     "explanation": "Ответы в целом понятные. Но между репликами клиента и ответами оператора были большие паузы (например, [13]→[14]), а в [14] идентификация повторена без нового содержания."
+    }
+   },
+   "c7": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      18
+     ],
+     "explanation": "Оператор подвёл итог (начать со сверки дат), предложил написать при необходимости и попрощался."
+    }
+   },
+   "c8": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      9,
+      11,
+      14,
+      16,
+      18
+     ],
+     "explanation": "Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальных данных нет."
+    }
+   }
+  },
+  "single|sonnet|p1-kz-001": {
+   "_call": {
+    "text": "{\"c1\":{\"answer\":\"yes\",\"evidence\":[9],\"explanation\":\"В первом ответе оператор поздоровался по-казахски («Сәлеметсіз бе») и назвал имя (Аружан).\"},\"c2\":{\"answer\":\"na\",\"evidence\":[0,4],\"explanation\":\"Клиент сказал, что находится за компьютером, и вопрос был ясен. Данных для ответа хватало, уточнения не требовались.\"},\"c3\":{\"answer\":\"na\",\"evidence\":[9],\"explanation\":\"Запрос навигационный: где в кабинете посмотреть тариф. Персональные данные клиента не раскрывались, идентификация не требовалась.\"},\"c4\":{\"answer\":\"20\",\"evidence\":[9,10],\"explanation\":\"Оператор дал понятный путь (раздел «Кабинет», тариф под ФИО) с учётом веб-версии. Клиент подтвердил, что нашёл тариф.\"},\"c5\":{\"answer\":\"yes\",\"evidence\":[9,11],\"explanation\":\"Оператор вежлив и ответил по сути вопроса. Недовольства клиент не выражал.\"},\"c6\":{\"answer\":\"10\",\"evidence\":[9,11],\"explanation\":\"Ответы ясные, связные и грамотные. Ожидания, о котором нужно было предупреждать, не было.\"},\"c7\":{\"answer\":\"no\",\"evidence\":[11],\"explanation\":\"Оператор попрощался («Сау болыңыз»), но не подвёл итог и не предложил дальнейшую помощь.\"},\"c8\":{\"answer\":\"no\",\"evidence\":[9,11],\"explanation\":\"Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальной информации нет.\"}}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 2253,
+     "output_tokens": 577,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.010276,
+    "sec": 4.1,
+    "stop": "end_turn"
+   },
+   "c1": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9
+     ],
+     "explanation": "В первом ответе оператор поздоровался по-казахски («Сәлеметсіз бе») и назвал имя (Аружан)."
+    }
+   },
+   "c2": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      0,
+      4
+     ],
+     "explanation": "Клиент сказал, что находится за компьютером, и вопрос был ясен. Данных для ответа хватало, уточнения не требовались."
+    }
+   },
+   "c3": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      9
+     ],
+     "explanation": "Запрос навигационный: где в кабинете посмотреть тариф. Персональные данные клиента не раскрывались, идентификация не требовалась."
+    }
+   },
+   "c4": {
+    "parsed": {
+     "answer": "20",
+     "evidence": [
+      9,
+      10
+     ],
+     "explanation": "Оператор дал понятный путь (раздел «Кабинет», тариф под ФИО) с учётом веб-версии. Клиент подтвердил, что нашёл тариф."
+    }
+   },
+   "c5": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      9,
+      11
+     ],
+     "explanation": "Оператор вежлив и ответил по сути вопроса. Недовольства клиент не выражал."
+    }
+   },
+   "c6": {
+    "parsed": {
+     "answer": "10",
+     "evidence": [
+      9,
+      11
+     ],
+     "explanation": "Ответы ясные, связные и грамотные. Ожидания, о котором нужно было предупреждать, не было."
+    }
+   },
+   "c7": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      11
+     ],
+     "explanation": "Оператор попрощался («Сау болыңыз»), но не подвёл итог и не предложил дальнейшую помощь."
+    }
+   },
+   "c8": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      9,
+      11
+     ],
+     "explanation": "Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальной информации нет."
+    }
+   }
+  },
+  "single|sonnet|p4-ru-001": {
+   "_call": {
+    "text": "{\"c1\":{\"answer\":\"yes\",\"evidence\":[12],\"explanation\":\"Оператор поздоровался по-русски, представился (имя замаскировано, что считается представлением) и предложил помощь.\"},\"c2\":{\"answer\":\"no\",\"evidence\":[23,25,29],\"explanation\":\"Оператор не уточнил, какая помощь нужна клиенту, его портфель и цели, и не выяснил, с чем клиент обратился. Он сразу сообщил, что консультаций нет.\"},\"c3\":{\"answer\":\"na\",\"evidence\":[25,27],\"explanation\":\"Персональные данные клиента не раскрывались и защищённых действий не было, идентификация не требовалась.\"},\"c4\":{\"answer\":\"5\",\"evidence\":[25,26,29,35],\"explanation\":\"Оператор объяснил, что техподдержка не консультирует по бумагам. Следующего шага для клиента нет: не сказано, как связаться с менеджером или выяснить, почему менеджера нет, и клиент остался в недоумении.\"},\"c5\":{\"answer\":\"no\",\"evidence\":[40,41,42],\"explanation\":\"Клиент выразил разочарование и чувство, что её отфутболили. Оператор формально «понял» и переложил вину на неправильное информирование, без конкретной помощи или предложения решения.\"},\"c6\":{\"answer\":\"4\",\"evidence\":[14,16,29,37,42],\"explanation\":\"Имя пришлось переспрашивать, реплики местами неясные («Мы откроем делаем»), ответы повторяются. Клиент не понимает, что делать дальше.\"},\"c7\":{\"answer\":\"na\",\"evidence\":[43],\"explanation\":\"Клиент сам завершил звонок, оператор не успел подвести итог и попрощаться.\"},\"c8\":{\"answer\":\"no\",\"evidence\":[],\"explanation\":\"Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальных данных нет.\"}}",
+    "usage": {
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0,
+     "inference_geo": "global",
+     "input_tokens": 4507,
+     "output_tokens": 648,
+     "server_tool_use": null,
+     "service_tier": "standard",
+     "output_tokens_details": {
+      "thinking_tokens": 0
+     },
+     "speed": "standard"
+    },
+    "cost": 0.015494,
+    "sec": 5.0,
+    "stop": "end_turn"
+   },
+   "c1": {
+    "parsed": {
+     "answer": "yes",
+     "evidence": [
+      12
+     ],
+     "explanation": "Оператор поздоровался по-русски, представился (имя замаскировано, что считается представлением) и предложил помощь."
+    }
+   },
+   "c2": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      23,
+      25,
+      29
+     ],
+     "explanation": "Оператор не уточнил, какая помощь нужна клиенту, его портфель и цели, и не выяснил, с чем клиент обратился. Он сразу сообщил, что консультаций нет."
+    }
+   },
+   "c3": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      25,
+      27
+     ],
+     "explanation": "Персональные данные клиента не раскрывались и защищённых действий не было, идентификация не требовалась."
+    }
+   },
+   "c4": {
+    "parsed": {
+     "answer": "5",
+     "evidence": [
+      25,
+      26,
+      29,
+      35
+     ],
+     "explanation": "Оператор объяснил, что техподдержка не консультирует по бумагам. Следующего шага для клиента нет: не сказано, как связаться с менеджером или выяснить, почему менеджера нет, и клиент остался в недоумении."
+    }
+   },
+   "c5": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [
+      40,
+      41,
+      42
+     ],
+     "explanation": "Клиент выразил разочарование и чувство, что её отфутболили. Оператор формально «понял» и переложил вину на неправильное информирование, без конкретной помощи или предложения решения."
+    }
+   },
+   "c6": {
+    "parsed": {
+     "answer": "4",
+     "evidence": [
+      14,
+      16,
+      29,
+      37,
+      42
+     ],
+     "explanation": "Имя пришлось переспрашивать, реплики местами неясные («Мы откроем делаем»), ответы повторяются. Клиент не понимает, что делать дальше."
+    }
+   },
+   "c7": {
+    "parsed": {
+     "answer": "na",
+     "evidence": [
+      43
+     ],
+     "explanation": "Клиент сам завершил звонок, оператор не успел подвести итог и попрощаться."
+    }
+   },
+   "c8": {
+    "parsed": {
+     "answer": "no",
+     "evidence": [],
+     "explanation": "Оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальных данных нет."
+    }
+   }
+  }
+ }
+}

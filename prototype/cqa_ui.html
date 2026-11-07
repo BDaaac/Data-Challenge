@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CQA — контроль качества</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F5F7; --surface:#FFFFFF; --surface-2:#F9FAFB; --border:#E2E5EA; --border-strong:#C9CED6;
+  --text:#14181F; --text-2:#4B5563; --text-3:#7A8392;
+  --accent:#0B6B47; --accent-hover:#08573A; --accent-weak:#E6F2EC; --accent-line:#9CCBB5;
+  --ok:#0A6B3D; --ok-bg:#E7F4EC; --bad:#B42318; --bad-bg:#FCEDEB; --warn:#9A4A06; --warn-bg:#FDF1E3;
+  --na:#4B5563; --na-bg:#EEF0F3; --info:#1D4F91; --info-bg:#E8EFF9;
+  --r:6px; --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono);font-size:12.5px}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);height:100vh}
+/* sidebar */
+.side{background:#10161D;color:#C9D1DB;display:flex;flex-direction:column;padding:16px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
+.mark{width:30px;height:30px;border-radius:6px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:600;font-size:12px;letter-spacing:.5px}
+.brand b{display:block;color:#fff;font-weight:600;font-size:14px}
+.brand span{font-size:11.5px;color:#8C96A3}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);color:#C9D1DB;text-decoration:none;font-size:13.5px;margin-bottom:2px}
+.nav a:hover{background:#1B232D;color:#fff}
+.nav a.on{background:#1F2A35;color:#fff;box-shadow:inset 2px 0 0 var(--accent-line)}
+.nav .cnt{margin-left:auto;font-size:11.5px;background:#2A3542;color:#E5E9EE;padding:0 7px;border-radius:10px}
+.nav .grp{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#6B7684;padding:16px 10px 6px}
+.side .foot{margin-top:auto;border-top:1px solid #222C37;padding-top:12px;font-size:12px;color:#8C96A3}
+.side .foot label{display:block;margin-bottom:4px}
+.side select{width:100%;background:#1B232D;border:1px solid #2A3542;color:#E5E9EE;border-radius:var(--r);padding:6px 8px}
+/* main */
+.main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.top{height:56px;flex:none;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px}
+.crumbs{font-size:13px;color:var(--text-3)}
+.crumbs b{color:var(--text);font-weight:500}
+.crumbs a{color:var(--text-3);text-decoration:none}
+.crumbs a:hover{color:var(--text)}
+.search{margin-left:auto;width:300px;height:34px;border:1px solid var(--border);border-radius:var(--r);padding:0 10px;background:var(--surface-2)}
+.user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)}
+.ava{width:30px;height:30px;border-radius:50%;background:var(--na-bg);display:grid;place-items:center;font-size:12px;font-weight:500;color:var(--text-2)}
+.view{flex:1;overflow:auto;padding:24px}
+.view.flush{padding:0;overflow:hidden;display:flex;flex-direction:column}
+h1{font-size:20px;font-weight:600;margin:0}
+h2{font-size:15px;font-weight:600;margin:0}
+.sub{color:var(--text-3);font-size:13px;margin:2px 0 0}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
+/* elements */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.card .ch{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+.card .cb{padding:16px}
+.btn{height:34px;padding:0 14px;border-radius:var(--r);border:1px solid var(--border-strong);background:var(--surface);cursor:pointer;font-weight:500;font-size:13.5px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{background:var(--accent-hover)}
+.btn.sm{height:28px;padding:0 10px;font-size:12.5px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--text-2)}
+.btn.ghost:hover{background:var(--na-bg)}
+.btn:focus-visible,.seg button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:1px 8px;border-radius:4px;white-space:nowrap;line-height:20px}
+.tag.ok{background:var(--ok-bg);color:var(--ok)} .tag.bad{background:var(--bad-bg);color:var(--bad)}
+.tag.warn{background:var(--warn-bg);color:var(--warn)} .tag.na{background:var(--na-bg);color:var(--na)}
+.tag.info{background:var(--info-bg);color:var(--info)} .tag.acc{background:var(--accent-weak);color:var(--accent)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+table.t{width:100%;border-collapse:collapse;font-size:13.5px}
+.t th{text-align:left;font-weight:500;color:var(--text-3);font-size:12px;padding:9px 12px;border-bottom:1px solid var(--border);background:var(--surface-2);white-space:nowrap}
+.t td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.t tr:last-child td{border-bottom:0}
+.t tbody tr.link{cursor:pointer}
+.t tbody tr.link:hover td{background:#F6F8FA}
+.t .r{text-align:right}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters select{height:32px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);padding:0 8px;font-size:13px}
+.chip{height:32px;padding:0 12px;border:1px solid var(--border);border-radius:16px;background:var(--surface);font-size:13px;cursor:pointer}
+.chip.on{border-color:var(--accent);background:var(--accent-weak);color:var(--accent);font-weight:500}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.kpi .l{font-size:12.5px;color:var(--text-3)}
+.kpi .v{font-size:24px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12px;color:var(--text-3);margin-top:2px}
+.kpi .d.up{color:var(--ok)} .kpi .d.down{color:var(--bad)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+.bar{display:grid;grid-template-columns:200px minmax(0,1fr) 48px;gap:10px;align-items:center;font-size:13px;padding:5px 0}
+.bar .track{height:8px;background:var(--na-bg);border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;background:var(--bad);opacity:.85}
+.bar .fill.mid{background:#C26A12}
+.bar .fill.low{background:#8A94A3}
+.score{font-weight:600;font-variant-numeric:tabular-nums}
+.score.hi{color:var(--ok)} .score.mid{color:var(--warn)} .score.lo{color:var(--bad)}
+.conf{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-3)}
+.conf i{display:inline-block;width:34px;height:5px;border-radius:3px;background:var(--na-bg);position:relative;overflow:hidden}
+.conf i b{position:absolute;inset:0 auto 0 0;background:var(--text-3)}
+.conf.low{color:var(--warn)} .conf.low i b{background:#C26A12}
+/* review workspace */
+.rhead{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.meta{display:flex;gap:20px;flex-wrap:wrap;font-size:13px}
+.meta div span{display:block;font-size:11.5px;color:var(--text-3)}
+.steps{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12.5px;color:var(--text-3)}
+.steps .s{display:flex;align-items:center;gap:6px}
+.steps .s.done{color:var(--ok)} .steps .s.cur{color:var(--text);font-weight:500}
+.steps .s .n{width:18px;height:18px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;font-size:11px}
+.steps .s.done .n{background:var(--ok);border-color:var(--ok);color:#fff}
+.steps .s.cur .n{background:var(--text);border-color:var(--text);color:#fff}
+.steps .sep{width:18px;height:1px;background:var(--border-strong)}
+.work{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 470px;min-height:0}
+.chat{overflow:auto;padding:20px 24px 40px;border-right:1px solid var(--border)}
+.chat .tools{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:12.5px;color:var(--text-3)}
+.msg{display:grid;grid-template-columns:34px 96px minmax(0,1fr);gap:10px;padding:8px 10px;border-radius:var(--r);border-left:3px solid transparent;margin-bottom:2px;font-size:13.5px;scroll-margin:80px}
+.msg .i{font-family:var(--mono);font-size:12px;color:var(--text-3);padding-top:1px}
+.msg .w{font-size:12px;color:var(--text-3);padding-top:1px}
+.msg .w b{display:block;font-weight:500;font-size:12.5px;color:var(--text-2)}
+.msg.op .w b{color:var(--accent)}
+.msg.ctx{color:var(--text-3)}
+.msg.ctx .w b{color:var(--text-3)}
+.msg.ev{background:#FFF8E8;border-left-color:#D99A1E}
+.msg.ev.focus{background:#FDEFCB}
+.sysline{display:flex;align-items:center;gap:10px;margin:12px 0;font-size:12px;color:var(--text-3)}
+.sysline::before,.sysline::after{content:"";flex:1;height:1px;background:var(--border)}
+.sysline.esc{color:var(--accent);font-weight:500}
+.sysline.esc::before,.sysline.esc::after{background:var(--accent-line)}
+.panel{display:flex;flex-direction:column;min-height:0;background:var(--surface)}
+.psum{padding:16px 20px;border-bottom:1px solid var(--border)}
+.total{display:flex;align-items:baseline;gap:8px}
+.total .big{font-size:34px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.total .of{color:var(--text-3)}
+.calc{font-size:12px;color:var(--text-3);margin-top:2px}
+.secs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.secs div{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12px;color:var(--text-3)}
+.secs b{display:block;color:var(--text);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.plist{flex:1;overflow:auto}
+.sec-t{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);padding:14px 20px 6px;background:var(--surface)}
+.crit{border-top:1px solid var(--border);padding:12px 20px;cursor:pointer}
+.crit:hover{background:#FAFBFC}
+.crit.sel{background:#F7FAF8;box-shadow:inset 3px 0 0 var(--accent)}
+.crit .row1{display:flex;align-items:center;gap:10px}
+.crit .no{font-family:var(--mono);font-size:12px;color:var(--text-3);width:18px}
+.crit .nm{font-weight:500;flex:1}
+.crit .wt{font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.crit .row2{display:flex;align-items:center;gap:10px;margin:6px 0 0 28px;flex-wrap:wrap}
+.crit .why{margin:8px 0 0 28px;font-size:13px;color:var(--text-2)}
+.crit .evs{margin:6px 0 0 28px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--text-3)}
+.evc{font-family:var(--mono);font-size:12px;border:1px solid var(--border-strong);background:var(--surface);border-radius:4px;padding:0 6px;cursor:pointer;line-height:20px}
+.evc:hover{border-color:var(--accent);color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--border-strong);border-radius:var(--r);overflow:hidden}
+.seg button{border:0;border-right:1px solid var(--border);background:var(--surface);padding:3px 10px;font-size:12.5px;cursor:pointer;min-width:38px;font-variant-numeric:tabular-nums}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--surface-2)}
+.seg button.on.yes{background:var(--ok-bg);color:var(--ok);font-weight:600}
+.seg button.on.no{background:var(--bad-bg);color:var(--bad);font-weight:600}
+.seg button.on.na{background:var(--na-bg);color:var(--text);font-weight:600}
+.seg button.on.st{background:var(--info-bg);color:var(--info);font-weight:600}
+.seg button .ai{font-size:9.5px;vertical-align:super;margin-left:2px;color:var(--text-3);font-weight:500}
+.reason{margin:8px 0 0 28px}
+.reason textarea{width:100%;min-height:54px;border:1px solid var(--border-strong);border-radius:var(--r);padding:6px 8px;font-size:13px;resize:vertical}
+.reason .hint{font-size:12px;color:var(--warn);margin-top:3px}
+.pfoot{border-top:1px solid var(--border);padding:12px 20px;display:flex;gap:8px;align-items:center;background:var(--surface)}
+.pfoot .note{font-size:12px;color:var(--text-3);margin-right:auto}
+.banner{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--r);font-size:13px;margin-top:12px}
+.banner.warn{background:var(--warn-bg);color:#6B3504}
+.banner.ok{background:var(--ok-bg);color:#07492A}
+.banner.info{background:var(--info-bg);color:#163B6C}
+.op-only{display:none}
+body.role-op .op-only{display:revert}
+body.role-op .qa-only{display:none!important}
+body.role-lead .qa-only.edit{display:none!important}
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative;padding:0 0 16px 22px;font-size:13px}
+.tl li::before{content:"";position:absolute;left:5px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--surface);border:2px solid var(--border-strong)}
+.tl li::after{content:"";position:absolute;left:10px;top:18px;bottom:0;width:1px;background:var(--border)}
+.tl li:last-child::after{display:none}
+.tl li.done::before{border-color:var(--ok);background:var(--ok)}
+.tl li.cur::before{border-color:var(--accent)}
+.tl .when{font-size:12px;color:var(--text-3)}
+.form label{display:block;font-size:12.5px;color:var(--text-2);margin:12px 0 4px;font-weight:500}
+.form input,.form textarea,.form select{width:100%;border:1px solid var(--border-strong);border-radius:var(--r);padding:7px 9px;font-size:13.5px;background:var(--surface)}
+.form textarea{min-height:64px;resize:vertical}
+.diff{font-size:13px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.diff div{padding:6px 10px}
+.diff .m{background:#FCEDEB;color:#7A1A12}
+.diff .p{background:#E7F4EC;color:#07492A}
+.muted{color:var(--text-3)}
+.spark{display:block}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--text-3);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:3px;vertical-align:middle;margin-right:5px}
+.toast{position:fixed;right:24px;bottom:24px;background:#10161D;color:#fff;padding:10px 14px;border-radius:var(--r);font-size:13px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+@media (max-width:1100px){.work{grid-template-columns:1fr}.chat{border-right:0;max-height:50vh}.grid2{grid-template-columns:1fr}.app{grid-template-columns:72px minmax(0,1fr)}.brand div,.nav a span,.nav .grp,.nav .cnt,.side .foot{display:none}}
+</style>
+</head>
+<body class="role-qa">
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="mark">CQA</div><div><b>Контроль качества</b><span>Чаты и звонки поддержки</span></div></div>
+    <nav class="nav" id="nav">
+      <div class="grp">Работа</div>
+      <a href="#queue" data-v="queue"><span>Очередь проверки</span><em class="cnt">9</em></a>
+      <a href="#review" data-v="review"><span>Рабочее место</span></a>
+      <a href="#appeals" data-v="appeals"><span>Апелляции</span><em class="cnt">3</em></a>
+      <div class="grp">Аналитика</div>
+      <a href="#dash" data-v="dash"><span>Обзор качества</span></a>
+      <div class="grp qa-only">Настройка</div>
+      <a href="#checklist" data-v="checklist" class="qa-only"><span>Чек-листы</span></a>
+    </nav>
+    <div class="foot">
+      <label for="role">Демо: роль пользователя</label>
+      <select id="role">
+        <option value="qa">QA-специалист</option>
+        <option value="lead">Руководитель группы</option>
+        <option value="op">Оператор</option>
+      </select>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <div class="crumbs" id="crumbs"></div>
+      <input class="search" placeholder="Поиск по ID диалога или оператору" aria-label="Поиск">
+      <div class="user"><div class="ava" id="ava">ДК</div><span id="uname">Д. Кудабаев · QA</span></div>
+    </header>
+    <section class="view" id="view"></section>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const CRIT = [
+  {id:1,sec:0,name:"Установление контакта",type:"yn",na:false,w:10},
+  {id:2,sec:0,name:"Выявление потребности",type:"yn",na:true,w:15},
+  {id:3,sec:1,name:"Идентификация",type:"yn",na:true,w:20},
+  {id:4,sec:1,name:"Корректная и полная консультация",type:"scale",scale:[0,5,10,15,20],na:true,w:20},
+  {id:5,sec:2,name:"Эмпатия и клиентоориентированность",type:"yn",na:false,w:15},
+  {id:6,sec:2,name:"Управление диалогом, скорость и грамотность",type:"scale",scale:[0,4,7,10],na:false,w:15},
+  {id:7,sec:2,name:"Завершение",type:"yn",na:true,w:5},
+  {id:8,sec:3,name:"Грубые ошибки",type:"flag",na:false,w:0},
+];
+const SECS = ["Начало и понимание запроса","Безопасность и решение","Ведение и завершение","Грубые нарушения"];
+
+const T = [
+ ["00:00","client","Почему у меня поменялся тариф? Вчера был другой."],
+ ["00:03","bot","Здравствуйте! Я AIM, AI-ассистент Freedom Broker. Я могу ответить на вопросы о продуктах и услугах, предоставить информацию по вашим счетам, активам и комиссиям…"],
+ ["00:03","bot","Продолжая разговор, Вы соглашаетесь на сбор и обработку персональных данных…"],
+ ["00:09","bot","Посмотреть текущий тариф можно в кабинете или в отчёте брокера."],
+ ["00:42","client","Я вижу новый. Мне надо понять причину. Позовите сотрудника, пожалуйста."],
+ ["00:45","bot","Желаете, чтобы я соединил Вас с оператором?"],
+ ["00:53","client","Да, пожалуйста"],
+ ["00:54","bot","Пожалуйста, ожидайте. Оператор скоро подключится к чату."],
+ ["00:57","system","Эскалация на оператора."],
+ ["01:53","operator","Здравствуйте, я Тимур. Понимаю, что неожиданное изменение тарифа может беспокоить. Где вы сравнивали названия тарифов?"],
+ ["02:13","client","В старом отчёте и сейчас на сайте."],
+ ["02:34","operator","Отчёт и кабинет могут показывать сведения на разные даты. По этой переписке причину изменения я не вижу. Если нужно проверить именно ваш счёт, понадобится идентификация."],
+ ["02:46","client","Давайте пока без неё. Я ещё даты сверю."],
+ ["03:12","client","А если даты совпадут, что подготовить для проверки?"],
+ ["04:02","operator","Напишите, где и когда вы видели каждое название тарифа. Если проверяем ваш счёт, сначала подтвердим личность."],
+ ["04:20","client","В чате надо отправлять сам отчёт?"],
+ ["04:40","operator","Для начала достаточно описать, на какой странице и на какую дату вы смотрели. Сам отчёт сюда пока отправлять не нужно."],
+ ["04:50","client","Ясно. Тогда сравню ещё раз."],
+ ["05:17","operator","Хорошо, начните со сверки дат. Если вопрос останется, напишите нам. До свидания!"],
+];
+
+const AI = {
+ 1:{a:"yes",c:.97,ev:[10],why:"В первом ответе оператор поздоровался на русском (язык клиента) и назвал имя «Тимур»."},
+ 2:{a:"yes",c:.88,ev:[10,11],why:"До ответа уточнил, где клиент сравнивал названия тарифов. Учёл то, что клиент уже писал боту."},
+ 3:{a:"na",c:.58,ev:[12,13],why:"Оператор предложил идентификацию, клиент отказался. Данные счёта не раскрывались, защищённых действий не было."},
+ 4:{a:"15",c:.76,ev:[12,15,17],why:"Объяснил вероятную причину расхождения и дал следующий шаг. Причину по счёту не установил: без идентификации это невозможно."},
+ 5:{a:"yes",c:.91,ev:[10],why:"Признал беспокойство клиента: «Понимаю, что неожиданное изменение тарифа может беспокоить»."},
+ 6:{a:"10",c:.84,ev:[12,15,17],why:"Ответы последовательные и понятные. Пауза 50 с перед #15 — после вопроса клиента, без явного ожидания."},
+ 7:{a:"yes",c:.82,ev:[19],why:"Подвёл итог («начните со сверки дат»), предложил написать снова и попрощался."},
+ 8:{a:"no",c:.96,ev:[],why:"Грубых нарушений не найдено: нет раскрытия данных без проверки, нет некорректных выражений."},
+};
+const CONF_MIN = 0.7;
+let cur = {}; Object.keys(AI).forEach(k=>cur[k]=AI[k].a);
+let reasons = {}; let sel = 3; let confirmed = false;
+
+const QUEUE = [
+ {id:"p1-ru-002",ch:"Чат",lang:"RU",op:"Тимур Ж.",grp:"Брокерские счета",score:93.75,flag:false,rev:1,st:"review",dt:"06.11 14:32"},
+ {id:"p1-kz-004",ch:"Чат",lang:"KZ",op:"Айгерим С.",grp:"Пополнение и вывод",score:62.5,flag:false,rev:2,st:"review",dt:"06.11 13:58"},
+ {id:"p1-ru-009",ch:"Чат",lang:"RU",op:"Ержан М.",grp:"Брокерские счета",score:41.25,flag:true,rev:2,st:"review",dt:"06.11 13:20"},
+ {id:"p4-ru-003",ch:"Звонок",lang:"RU",op:"Динара К.",grp:"Тарифы",score:78.0,flag:false,rev:1,st:"review",dt:"06.11 12:47"},
+ {id:"p1-en-006",ch:"Чат",lang:"EN",op:"Арман Т.",grp:"Международные рынки",score:88.13,flag:false,rev:1,st:"review",dt:"06.11 12:15"},
+ {id:"p1-ru-018",ch:"Чат",lang:"RU",op:"Ержан М.",grp:"Брокерские счета",score:26.0,flag:false,rev:1,st:"appeal",dt:"06.11 11:40"},
+ {id:"p1-kz-003",ch:"Чат",lang:"KZ",op:"Айгерим С.",grp:"Пополнение и вывод",score:100,flag:false,rev:0,st:"done",dt:"06.11 11:02"},
+ {id:"p1-ru-006",ch:"Чат",lang:"RU",op:"Тимур Ж.",grp:"Брокерские счета",score:100,flag:false,rev:0,st:"done",dt:"06.11 10:31"},
+ {id:"p1-en-002",ch:"Чат",lang:"EN",op:"Арман Т.",grp:"Международные рынки",score:85.5,flag:false,rev:0,st:"done",dt:"06.11 10:05"},
+ {id:"p1-ru-022",ch:"Чат",lang:"RU",op:"Ержан М.",grp:"Брокерские счета",score:55.0,flag:true,rev:0,st:"done",dt:"05.11 18:12"},
+];
+const ST = {review:["warn","Требует проверки"],appeal:["info","Апелляция"],done:["ok","Подтверждено"]};
+
+const $ = s=>document.querySelector(s);
+const fmt = n=> n==null?"—":n.toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:2});
+const scls = n=> n>=85?"hi":n>=65?"mid":"lo";
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),2400)}
+function ansLabel(c,a){ if(a==="yes")return c.type==="flag"?"Есть":"Да"; if(a==="no")return c.type==="flag"?"Нет":"Нет"; if(a==="na")return "N/A"; return a+" / "+c.scale[c.scale.length-1]; }
+function ansTag(c,a){ if(c.type==="flag") return a==="yes"?'<span class="tag bad">Обнаружены</span>':'<span class="tag ok">Нет</span>';
+  if(a==="na")return '<span class="tag na">N/A</span>'; if(a==="yes")return '<span class="tag ok">Да</span>'; if(a==="no")return '<span class="tag bad">Нет</span>';
+  const mx=c.scale[c.scale.length-1], v=+a; return `<span class="tag ${v===mx?"ok":v===0?"bad":"warn"}">${v} из ${mx}</span>`; }
+
+function calc(ans){
+  let W=0, raw={};
+  CRIT.forEach(c=>{ if(!c.w)return; const a=ans[c.id]; if(a==="na")return; W+=c.w;
+    raw[c.id]= c.type==="scale"? c.w*(+a)/c.scale[c.scale.length-1] : (a==="yes"?c.w:0); });
+  if(!W) return {total:null,W,k:0,pts:{},secs:[]};
+  const k=100/W, pts={}; let s=0; Object.keys(raw).forEach(i=>{pts[i]=raw[i]*k; s+=pts[i]});
+  const secs=[0,1,2].map(si=>{let got=0,max=0; CRIT.filter(c=>c.sec===si&&c.w).forEach(c=>{ if(ans[c.id]==="na")return; got+=pts[c.id]; max+=c.w*k}); return max?{got,max}:null});
+  return {total:Math.round((s+1e-9)*100)/100,W,k,pts,secs};
+}
+
+/* ---------- views ---------- */
+const views = {};
+views.queue = ()=>{
+  const rows = QUEUE.map(q=>`<tr class="link" data-id="${q.id}">
+    <td class="mono">${q.id}</td><td>${q.ch}</td><td>${q.lang}</td><td>${q.op}<div class="muted" style="font-size:12px">${q.grp}</div></td>
+    <td class="r"><span class="score ${scls(q.score)}">${fmt(q.score)}</span></td>
+    <td>${q.flag?'<span class="tag bad">Грубая ошибка</span>':'<span class="muted">—</span>'}</td>
+    <td>${q.rev?`<span class="tag warn">${q.rev} ${q.rev===1?"критерий":"критерия"}</span>`:'<span class="muted">—</span>'}</td>
+    <td><span class="tag ${ST[q.st][0]}"><span class="dot"></span>${ST[q.st][1]}</span></td>
+    <td class="muted num">${q.dt}</td></tr>`).join("");
+  return `<div class="head"><div><h1>Очередь проверки</h1><p class="sub">AI оценил все 65 диалогов за смену. В очередь попадают только те, где модель не уверена, есть грубая ошибка или подана апелляция.</p></div>
+    <div style="display:flex;gap:8px"><button class="btn" onclick="toast('Экспорт в Excel сформирован')">Экспорт</button><button class="btn pri qa-only edit" onclick="toast('Загрузка транскриптов: перетащите JSON-файл')">Загрузить диалоги</button></div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Оценено AI сегодня</div><div class="v">65</div><div class="d">100% диалогов смены</div></div>
+    <div class="kpi"><div class="l">Ждут проверки QA</div><div class="v">9</div><div class="d">14% — низкая уверенность модели</div></div>
+    <div class="kpi"><div class="l">Открытые апелляции</div><div class="v">3</div><div class="d">срок ответа — 2 рабочих дня</div></div>
+    <div class="kpi"><div class="l">Средний балл</div><div class="v">84,30</div><div class="d up">+1,8 к прошлой неделе</div></div>
+  </div>
+  <div class="filters">
+    <button class="chip on">Требуют проверки · 5</button><button class="chip">Апелляции · 1</button><button class="chip">Грубые ошибки · 2</button><button class="chip">Все</button>
+    <select aria-label="Канал"><option>Все каналы</option><option>Чат</option><option>Звонок</option></select>
+    <select aria-label="Язык"><option>Все языки</option><option>RU</option><option>KZ</option><option>EN</option></select>
+    <select aria-label="Группа"><option>Все группы</option><option>Брокерские счета</option><option>Пополнение и вывод</option><option>Тарифы</option></select>
+  </div>
+  <div class="card"><table class="t"><thead><tr><th>Диалог</th><th>Канал</th><th>Язык</th><th>Оператор</th><th class="r">Балл</th><th>Флаг</th><th>Под вопросом</th><th>Статус</th><th>Время</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+};
+views.queue.after = ()=>document.querySelectorAll("tr.link").forEach(r=>r.onclick=()=>{location.hash="review"});
+
+views.review = ()=>{
+  const lastSys = 9;
+  const chat = T.map((m,i)=>{const n=i+1, sp=m[1];
+    if(sp==="system") return `<div class="sysline ${m[2].startsWith("Эскалация")?"esc":""}" id="m${n}">#${n} · ${m[0]} · ${m[2]} ${m[2].startsWith("Эскалация")?"Начало оценки работы оператора":""}</div>`;
+    const who={client:"Клиент",bot:"Бот AIM",operator:"Оператор"}[sp];
+    return `<div class="msg ${sp==="operator"?"op":""} ${(sp==="bot"||n<lastSys)?"ctx":""}" id="m${n}"><div class="i">#${n}</div><div class="w"><b>${who}</b>${m[0]}</div><div>${m[2]}</div></div>`}).join("");
+  return `<div class="rhead">
+    <div><h1 class="mono" style="font-size:17px">p1-ru-002</h1><p class="sub">Вопрос о смене тарифа</p></div>
+    <div class="meta"><div><span>Оператор</span>Тимур Ж.</div><div><span>Канал · язык</span>Чат · RU</div><div><span>Дата</span>06.11.2026 14:32</div>
+      <div><span>Чек-лист</span>Чат v1 <span class="mono" style="display:inline;color:var(--text-3)">#a3f91c</span></div><div><span>Оценка AI</span>8 запросов · $0,015</div></div>
+    <div class="steps" id="steps"></div>
+  </div>
+  <div class="work">
+    <div class="chat"><div class="tools"><span>19 реплик · 5:17</span><span>·</span><span>Подсвечены доказательства выбранного критерия</span>
+      <label style="margin-left:auto;display:flex;gap:6px;align-items:center"><input type="checkbox" id="ctx" checked> Показывать контекст бота</label></div>${chat}</div>
+    <div class="panel"><div class="psum" id="psum"></div><div class="plist" id="plist"></div>
+      <div class="pfoot" id="pfoot"></div></div>
+  </div>`;
+};
+views.review.flush = true;
+views.review.after = ()=>{ renderPanel(); $("#ctx").onchange=e=>document.querySelectorAll(".msg.ctx").forEach(m=>m.style.display=e.target.checked?"":"none"); highlight(sel,false); };
+
+function renderPanel(){
+  const r=calc(cur), changed=Object.keys(AI).filter(k=>cur[k]!==AI[k].a), missing=changed.filter(k=>!(reasons[k]||"").trim());
+  const low=Object.keys(AI).filter(k=>AI[k].c<CONF_MIN && cur[k]===AI[k].a && !confirmed);
+  const role=document.body.className;
+  $("#steps").innerHTML = [["Оценено AI",1],["Проверка QA",confirmed?1:2],["Подтверждено",confirmed?2:0],["Апелляция",0]].map(([t,s],i)=>
+    `${i?'<span class="sep"></span>':""}<span class="s ${s===1?"done":s===2?"cur":""}"><span class="n">${s===1?"✓":i+1}</span>${t}</span>`).join("");
+  $("#psum").innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div><div class="muted" style="font-size:12.5px">Итоговый балл</div><div class="total"><span class="big">${fmt(r.total)}</span><span class="of">из 100</span>
+    ${changed.length?`<span class="tag info" style="margin-left:6px">AI: ${fmt(calc(Object.fromEntries(Object.keys(AI).map(k=>[k,AI[k].a]))).total)}</span>`:""}</div>
+    <div class="calc">Применимый вес ${r.W} из 100 · N/A перераспределён, коэффициент ${r.k.toFixed(2).replace(".",",")}</div></div>
+    ${cur[8]==="yes"?'<span class="tag bad">Грубая ошибка</span>':'<span class="tag ok">Без грубых ошибок</span>'}</div>
+    <div class="secs">${r.secs.map((s,i)=>`<div>${SECS[i]}<b>${s?fmt(s.got)+" / "+fmt(s.max):"N/A"}</b></div>`).join("")}</div>
+    ${low.length?`<div class="banner warn"><b>!</b><div>Модель не уверена в критерии ${low.map(k=>"№"+k).join(", ")} (уверенность ниже ${CONF_MIN*100}%). Проверьте его до подтверждения.</div></div>`:""}
+    ${confirmed?`<div class="banner ok">Оценка подтверждена. Оператор увидит её в своей карточке, у него есть 5 рабочих дней на апелляцию.</div>`:""}`;
+  let html="", last=-1;
+  CRIT.forEach(c=>{ const ai=AI[c.id], a=cur[c.id];
+    if(c.sec!==last){html+=`<div class="sec-t">${SECS[c.sec]}</div>`; last=c.sec;}
+    const opts = c.type==="scale"? c.scale.map(String).concat(c.na?["na"]:[]) : c.type==="flag"? ["no","yes"] : ["yes","no"].concat(c.na?["na"]:[]);
+    const seg = `<div class="seg qa-only edit" role="group" aria-label="Ответ по критерию ${c.id}">${opts.map(o=>{const cl=o==="yes"?(c.type==="flag"?"no":"yes"):o==="no"?(c.type==="flag"?"yes":"no"):o==="na"?"na":"st";
+      return `<button data-c="${c.id}" data-o="${o}" class="${a===o?"on "+cl:""}">${o==="yes"?(c.type==="flag"?"Есть":"Да"):o==="no"?"Нет":o==="na"?"N/A":o}${ai.a===o?'<span class="ai">AI</span>':""}</button>`}).join("")}</div>`;
+    const wt = c.w? (a==="na"?`вес ${c.w} → 0`:`${fmt(r.pts[c.id])} из ${fmt(c.w*r.k)} · вес ${c.w}`) : "без баллов";
+    const isLow = ai.c<CONF_MIN, ch = a!==ai.a, open = sel===c.id;
+    html+=`<div class="crit ${open?"sel":""}" data-c="${c.id}">
+      <div class="row1"><span class="no">${String(c.id).padStart(2,"0")}</span><span class="nm">${c.name}</span>${ansTag(c,a)}</div>
+      <div class="row2"><span class="wt">${wt}</span>
+        <span class="conf ${isLow?"low":""}"><i><b style="width:${ai.c*100}%"></b></i>уверенность ${Math.round(ai.c*100)}%</span>
+        ${ch?'<span class="tag info">Изменено QA</span>':isLow&&!confirmed?'<span class="tag warn">Требует проверки</span>':""}</div>
+      ${open?`<div class="why">${ai.why}</div>
+        <div class="evs">Доказательства: ${ai.ev.length?ai.ev.map(e=>`<span class="evc" data-ev="${e}">#${e}</span>`).join(""):"<span>нет — нарушение не найдено</span>"}</div>
+        <div class="row2" style="margin-top:10px">${seg}<button class="btn sm op-only" onclick="event.stopPropagation();toast('Апелляция по критерию №${c.id} отправлена QA-специалисту')">Оспорить</button></div>
+        ${ch?`<div class="reason qa-only edit"><textarea data-r="${c.id}" placeholder="Почему вы не согласны с AI? Причина попадёт в историю и в обучение промпта">${reasons[c.id]||""}</textarea>${!(reasons[c.id]||"").trim()?'<div class="hint">Укажите причину изменения</div>':""}</div>`:""}`:""}
+    </div>`;});
+  $("#plist").innerHTML = html;
+  $("#pfoot").innerHTML = role.includes("op")? `<span class="note">Не согласны с оценкой? Выберите критерий и нажмите «Оспорить».</span>`
+    : role.includes("lead")? `<span class="note">Режим просмотра. Изменять оценку может QA-специалист.</span><button class="btn" onclick="toast('Задача на коучинг создана')">Назначить коучинг</button>`
+    : `<span class="note">${changed.length?`Изменено критериев: ${changed.length}`:"Изменений нет"}</span>
+       <button class="btn" onclick="toast('Отправлено на повторную оценку AI')">Переоценить</button>
+       <button class="btn pri" id="confirm" ${confirmed?"disabled":""}>${confirmed?"Подтверждено":"Подтвердить оценку"}</button>`;
+  document.querySelectorAll(".crit").forEach(el=>el.onclick=e=>{ if(e.target.closest("button,textarea,.evc"))return; sel=+el.dataset.c; renderPanel(); highlight(sel,true)});
+  document.querySelectorAll(".seg button").forEach(b=>b.onclick=e=>{e.stopPropagation(); if(confirmed)return; cur[b.dataset.c]=b.dataset.o; renderPanel()});
+  document.querySelectorAll("textarea[data-r]").forEach(t=>{t.oninput=()=>{reasons[t.dataset.r]=t.value}; t.onblur=()=>renderPanel(); t.onclick=e=>e.stopPropagation()});
+  document.querySelectorAll(".evc").forEach(x=>x.onclick=e=>{e.stopPropagation(); const m=$("#m"+x.dataset.ev); m.scrollIntoView({behavior:"smooth",block:"center"}); m.classList.add("focus"); setTimeout(()=>m.classList.remove("focus"),1200)});
+  const cb=$("#confirm"); if(cb) cb.onclick=()=>{ if(missing.length){toast("Укажите причину изменения для критерия №"+missing.join(", №"));return}
+    confirmed=true; QUEUE[0].st="done"; QUEUE[0].rev=0; QUEUE[0].score=calc(cur).total; renderPanel(); toast("Оценка подтверждена и опубликована оператору")};
+}
+function highlight(id,scroll){ document.querySelectorAll(".msg.ev").forEach(m=>m.classList.remove("ev"));
+  const ev=AI[id].ev; ev.forEach(e=>{const m=$("#m"+e); if(m&&m.classList.contains("msg")) m.classList.add("ev")});
+  if(scroll&&ev.length){$("#m"+ev[0]).scrollIntoView({behavior:"smooth",block:"center"})} }
+
+views.appeals = ()=>`<div class="head"><div><h1>Апелляции</h1><p class="sub">Оператор оспаривает конкретный критерий. QA-специалист решает с обязательной причиной, после чего балл пересчитывается.</p></div></div>
+  <div class="grid2">
+   <div class="card"><table class="t"><thead><tr><th>Диалог</th><th>Оператор</th><th>Критерий</th><th>Было</th><th>Срок</th><th>Статус</th></tr></thead><tbody>
+    <tr class="link" style="background:#F7FAF8"><td class="mono">p1-ru-018</td><td>Ержан М.</td><td>06 · Управление диалогом</td><td><span class="tag bad">0 из 10</span></td><td class="num">08.11</td><td><span class="tag info">На рассмотрении</span></td></tr>
+    <tr class="link"><td class="mono">p1-kz-007</td><td>Айгерим С.</td><td>01 · Установление контакта</td><td><span class="tag bad">Нет</span></td><td class="num">09.11</td><td><span class="tag info">На рассмотрении</span></td></tr>
+    <tr class="link"><td class="mono">p1-en-011</td><td>Арман Т.</td><td>07 · Завершение</td><td><span class="tag bad">Нет</span></td><td class="num">09.11</td><td><span class="tag na">Новая</span></td></tr>
+    <tr class="link"><td class="mono">p1-ru-014</td><td>Тимур Ж.</td><td>03 · Идентификация</td><td><span class="tag bad">Нет</span></td><td class="num muted">04.11</td><td><span class="tag ok">Принята · +20,00</span></td></tr>
+    <tr class="link"><td class="mono">p1-ru-031</td><td>Динара К.</td><td>04 · Консультация</td><td><span class="tag warn">10 из 20</span></td><td class="num muted">03.11</td><td><span class="tag na">Отклонена</span></td></tr>
+   </tbody></table></div>
+   <div class="card"><div class="ch"><h2>p1-ru-018 · критерий 06</h2><span class="tag info">На рассмотрении</span></div><div class="cb">
+     <p class="muted" style="margin:0 0 4px;font-size:12.5px">Довод оператора</p>
+     <p style="margin:0 0 12px">«Клиент писал короткими фразами, я дважды уточнил — это не бессвязность. Прошу пересмотреть до 7.»</p>
+     <p class="muted" style="margin:0 0 4px;font-size:12.5px">Обоснование AI · уверенность 64%</p>
+     <p style="margin:0 0 14px">Реплики #14 и #16 противоречат друг другу по сроку зачисления. Клиенту пришлось переспросить дважды (#15, #17).</p>
+     <ul class="tl">
+      <li class="done"><b>Оценено AI</b> · 0 из 10<div class="when">06.11 11:40 · чек-лист Чат v1</div></li>
+      <li class="done"><b>Подтверждено QA</b> · Д. Кудабаев<div class="when">06.11 12:05</div></li>
+      <li class="done"><b>Подана апелляция</b> · Ержан М.<div class="when">06.11 15:30</div></li>
+      <li class="cur"><b>Решение QA</b><div class="when">до 08.11</div></li>
+     </ul>
+     <div class="form qa-only edit"><label for="dec">Решение</label><select id="dec"><option>Принять: изменить на 7 из 10</option><option>Принять: изменить на 4 из 10</option><option>Отклонить</option></select>
+     <label for="why">Причина (видна оператору)</label><textarea id="why" placeholder="Например: противоречие в #14 и #16 есть, но клиент понял ответ после уточнения"></textarea>
+     <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" onclick="toast('Решение сохранено. Балл диалога пересчитан: 26,00 → 36,50')">Сохранить решение</button><button class="btn" onclick="location.hash='review'">Открыть диалог</button></div></div>
+   </div></div>
+  </div>`;
+
+views.dash = ()=>{
+  const fails=[["03 · Идентификация",22],["07 · Завершение",31],["02 · Выявление потребности",18],["04 · Консультация (ниже 15)",17],["06 · Управление диалогом",12],["05 · Эмпатия",9],["01 · Установление контакта",6]].sort((a,b)=>b[1]-a[1]);
+  const ops=[["Ержан М.","Брокерские счета",14,58.4,2,"03 Идентификация"],["Динара К.","Тарифы",11,79.1,0,"04 Консультация"],["Айгерим С.","Пополнение и вывод",15,86.7,0,"01 Контакт (KZ)"],["Арман Т.","Международные рынки",12,90.2,0,"07 Завершение"],["Тимур Ж.","Брокерские счета",13,94.8,0,"—"]];
+  const trend=[80.1,81.4,79.8,82.6,83.0,82.2,84.3], pts=trend.map((v,i)=>`${10+i*70},${110-(v-76)*10}`).join(" ");
+  return `<div class="head"><div><h1>Обзор качества</h1><p class="sub">Неделя 31.10–06.11 · все группы · чат и звонки</p></div>
+   <div class="filters" style="margin:0"><select aria-label="Период"><option>Последние 7 дней</option><option>30 дней</option><option>Квартал</option></select><select aria-label="Группа"><option>Все группы</option></select><button class="btn" onclick="toast('Отчёт PDF сформирован')">Отчёт для руководства</button></div></div>
+  <div class="kpis">
+   <div class="kpi"><div class="l">Средний балл</div><div class="v">84,30</div><div class="d up">+1,8 к прошлой неделе</div></div>
+   <div class="kpi"><div class="l">Покрытие проверкой</div><div class="v">100%</div><div class="d">было ~3% при ручной выборке</div></div>
+   <div class="kpi"><div class="l">Грубые ошибки</div><div class="v">2</div><div class="d down">оба — раскрытие данных до проверки</div></div>
+   <div class="kpi"><div class="l">Согласие QA с AI</div><div class="v">91%</div><div class="d">по 312 подтверждённым критериям</div></div>
+   <div class="kpi"><div class="l">Стоимость проверки</div><div class="v">$0,015</div><div class="d">на диалог, против ~15 мин ручной работы</div></div>
+  </div>
+  <div class="grid2">
+   <div class="card"><div class="ch"><h2>Где теряем баллы</h2><span class="muted" style="font-size:12.5px">доля «Нет» среди применимых</span></div><div class="cb">
+    ${fails.map(([n,v])=>`<div class="bar"><span>${n}</span><div class="track"><div class="fill ${v>=20?"":v>=12?"mid":"low"}" style="width:${v*2.5}%"></div></div><span class="num r" style="text-align:right">${v}%</span></div>`).join("")}
+    <div class="banner info">Завершение и идентификация дают 53% всех потерь. Рекомендация: короткий тренинг по закрытию чата и правилу «проверка до раскрытия данных» для группы «Брокерские счета».</div>
+   </div></div>
+   <div class="card"><div class="ch"><h2>Динамика среднего балла</h2><span class="muted" style="font-size:12.5px">по дням</span></div><div class="cb">
+    <svg class="spark" viewBox="0 0 440 130" width="100%" height="150" role="img" aria-label="Средний балл по дням: от 80,1 до 84,3">
+     ${[78,80,82,84,86].map(v=>`<line x1="10" x2="440" y1="${110-(v-76)*10}" y2="${110-(v-76)*10}" stroke="#E2E5EA"/><text x="0" y="${106-(v-76)*10}" font-size="10" fill="#7A8392">${v}</text>`).join("")}
+     <line x1="10" x2="440" y1="${110-(85-76)*10}" y2="${110-(85-76)*10}" stroke="#0B6B47" stroke-dasharray="4 4"/>
+     <polyline points="${pts}" fill="none" stroke="#14181F" stroke-width="2"/>
+     ${trend.map((v,i)=>`<circle cx="${10+i*70}" cy="${110-(v-76)*10}" r="3" fill="#14181F"/>`).join("")}
+     ${["31.10","01.11","02.11","03.11","04.11","05.11","06.11"].map((d,i)=>`<text x="${10+i*70}" y="128" font-size="10" fill="#7A8392" text-anchor="middle">${d}</text>`).join("")}
+    </svg>
+    <div class="legend"><span><i style="background:#14181F"></i>Средний балл</span><span><i style="background:#0B6B47"></i>Цель 85</span></div>
+    <table class="t" style="margin-top:12px"><thead><tr><th>Язык</th><th class="r">Диалогов</th><th class="r">Балл</th></tr></thead><tbody>
+     <tr><td>Русский</td><td class="r num">30</td><td class="r"><span class="score mid">82,90</span></td></tr><tr><td>Казахский</td><td class="r num">15</td><td class="r"><span class="score hi">86,10</span></td></tr>
+     <tr><td>Английский</td><td class="r num">15</td><td class="r"><span class="score hi">88,40</span></td></tr><tr><td>Звонки (RU)</td><td class="r num">5</td><td class="r"><span class="score mid">76,20</span></td></tr></tbody></table>
+   </div></div>
+  </div>
+  <div class="card"><div class="ch"><h2>Операторы</h2><span class="muted" style="font-size:12.5px">кого и чему учить</span></div>
+   <table class="t"><thead><tr><th>Оператор</th><th>Группа</th><th class="r">Диалогов</th><th class="r">Средний балл</th><th class="r">Грубые</th><th>Слабый критерий</th><th></th></tr></thead><tbody>
+   ${ops.map(o=>`<tr><td>${o[0]}</td><td class="muted">${o[1]}</td><td class="r num">${o[2]}</td><td class="r"><span class="score ${scls(o[3])}">${fmt(o[3])}</span></td><td class="r num">${o[4]?`<span class="tag bad">${o[4]}</span>`:"0"}</td><td>${o[5]}</td><td class="r"><button class="btn sm" onclick="toast('Задача на коучинг: ${o[0]}')">Коучинг</button></td></tr>`).join("")}
+   </tbody></table></div>`;
+};
+
+let editing=false;
+views.checklist = ()=>{
+  const rows=CRIT.map(c=>`<tr><td class="mono">${String(c.id).padStart(2,"0")}</td><td>${c.name}</td><td class="muted">${SECS[c.sec]}</td>
+    <td>${c.type==="yn"?"Да / Нет":c.type==="flag"?"Флаг":"Шкала "+c.scale.join("/")}</td><td>${c.na?"Да":"—"}</td><td class="r num">${c.w||"—"}</td>
+    <td class="r"><button class="btn sm ghost" onclick="editC(${c.id})">Изменить</button></td></tr>`).join("");
+  return `<div class="head"><div><h1>Чек-листы</h1><p class="sub">Критерии — это данные, а не код. Изменение сохраняется новой версией, старые оценки остаются привязаны к своей версии.</p></div>
+    <div style="display:flex;gap:8px"><select class="btn" aria-label="Чек-лист"><option>Чат · v1 · активна</option><option>Звонки · v1 · активна</option></select><button class="btn" onclick="editC(null)">Добавить критерий</button></div></div>
+  <div class="grid2">
+   <div class="card"><div class="ch"><h2>Чат · версия 1</h2><span class="tag ok">Сумма весов 100 из 100</span></div>
+    <table class="t"><thead><tr><th>№</th><th>Критерий</th><th>Секция</th><th>Тип ответа</th><th>N/A</th><th class="r">Вес</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+   <div class="card" id="editor">${editorHtml()}</div>
+  </div>`;
+};
+let editId=7;
+function editorHtml(){ const c=CRIT.find(x=>x.id===editId)||{id:9,name:"",w:0};
+  return `<div class="ch"><h2>${c.name?"Критерий "+String(c.id).padStart(2,"0"):"Новый критерий"}</h2><span class="tag na">Черновик v2</span></div><div class="cb form">
+   <label for="cn">Название</label><input id="cn" value="${c.name}">
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><label for="ct">Тип ответа</label><select id="ct"><option>Да / Нет / N/A</option><option>Шкала</option><option>Флаг без баллов</option></select></div>
+   <div><label for="cw">Вес</label><input id="cw" type="number" value="${c.w}"></div></div>
+   <label for="cy">Когда «Да» (инструкция для модели)</label><textarea id="cy">Оператор подвёл итог или предложил дальнейшую помощь и попрощался.</textarea>
+   <label for="cnn">Когда «N/A»</label><textarea id="cnn">Клиент покинул чат или связь прервалась до завершения.</textarea>
+   <label style="margin-top:16px">Изменения относительно v1</label>
+   <div class="diff"><div class="m">− Когда «Да»: оператор попрощался с клиентом.</div><div class="p">+ Когда «Да»: оператор подвёл итог или предложил дальнейшую помощь и попрощался.</div></div>
+   <div class="banner info">После публикации v2 система переоценит 65 диалогов DEV этим критерием и покажет, сколько оценок изменится. Примерная стоимость $0,12.</div>
+   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" onclick="toast('Версия v2 опубликована. Переоценка запущена: 65 диалогов')">Опубликовать v2 и переоценить</button><button class="btn" onclick="toast('Проверка на эталоне: совпадение 88% → 91%')">Проверить на эталоне</button></div>
+  </div>`;}
+function editC(id){ editId=id; $("#editor").innerHTML=editorHtml(); }
+
+/* ---------- router ---------- */
+const CR = {queue:"Очередь проверки",review:'<a href="#queue">Очередь проверки</a> / <b>p1-ru-002</b>',appeals:"Апелляции",dash:"Обзор качества",checklist:"Чек-листы"};
+function go(){ let v=(location.hash||"#review").slice(1); if(!views[v])v="review";
+  if(document.body.classList.contains("role-op") && v==="checklist") v="review";
+  const el=$("#view"); el.className="view"+(views[v].flush?" flush":""); el.innerHTML=views[v]();
+  $("#crumbs").innerHTML=CR[v].includes("<")?CR[v]:`<b>${CR[v]}</b>`;
+  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.dataset.v===v));
+  views[v].after&&views[v].after(); }
+$("#role").onchange=e=>{ const r=e.target.value; document.body.className="role-"+r;
+  const u={qa:["ДК","Д. Кудабаев · QA"],lead:["АН","А. Нурланова · руководитель группы"],op:["ТЖ","Тимур Ж. · оператор"]}[r];
+  $("#ava").textContent=u[0]; $("#uname").textContent=u[1]; go(); };
+window.addEventListener("hashchange",go); go();
+</script>
+</body>
+</html>
