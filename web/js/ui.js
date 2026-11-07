@@ -30,7 +30,7 @@ export const plural = (n, a, b, c) => { const m = Math.abs(n) % 100, k = m % 10;
 export const LANG = { RU: "Русский", KZ: "Казахский", EN: "Английский" };
 export const CH = { "agent chat": "Чат", "voice call": "Звонок" };
 export const SECS = ["Начало и понимание запроса", "Безопасность и решение", "Ведение и завершение", "Грубые нарушения"];
-export const ROLE = { qa: "QA-специалист", op: "Оператор", lead: "Руководитель группы", head: "Руководитель QA", dir: "Директор", comp: "Комплаенс", adm: "Администратор" };
+export const ROLE = { qa: "QA-специалист", op: "Оператор", lead: "Руководитель группы", adm: "Администратор" };
 export const ST = {
   new: ["na", "Не оценён"], evaluating: ["info", "Оценивается"], error: ["bad", "Оценка неполная"], review: ["warn", "Ждёт проверки"],
   published: ["acc", "Опубликовано"], acknowledged: ["na", "Ознакомлен"], appeal: ["info", "Апелляция"], revised: ["ok", "Пересмотрено"]

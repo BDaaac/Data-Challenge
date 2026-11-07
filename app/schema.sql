@@ -160,3 +160,26 @@ CREATE TABLE IF NOT EXISTS settings (
   key   text PRIMARY KEY,
   value jsonb NOT NULL
 );
+
+-- Legacy accounts retain identity/history, but require administrator reactivation.
+-- No unscoped director is silently granted access to a team.
+UPDATE users SET role=CASE WHEN role='dir' THEN 'lead' ELSE 'qa' END,
+                 active=false WHERE role IN ('head','dir','comp');
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('qa','op','lead','adm'));
+
+CREATE TABLE IF NOT EXISTS development_tasks (
+ id serial PRIMARY KEY,
+ dialog_id text NOT NULL REFERENCES dialogs(id),
+ operator_id int NOT NULL REFERENCES users(id),
+ created_by int NOT NULL REFERENCES users(id),
+ request_key uuid NOT NULL,
+ instruction text NOT NULL,
+ status text NOT NULL DEFAULT 'assigned' CHECK(status IN ('assigned','submitted','completed')),
+ response text,
+ feedback text,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ submitted_at timestamptz,
+ reviewed_at timestamptz,
+ UNIQUE(created_by, request_key)
+);

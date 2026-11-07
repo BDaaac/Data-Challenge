@@ -12,9 +12,9 @@ from . import engine
 
 SECTION = {"c1": 0, "c2": 0, "c3": 1, "c4": 1, "c5": 2, "c6": 2, "c7": 2, "c8": 3}
 TEAMS = ["Брокерские счета", "Пополнение и вывод", "Тарифы и комиссии", "Международные рынки"]
-STAFF = [("qa", "Дана Кудайберген", "qa", None), ("head", "Салтанат Ахметова", "head", None),
-         ("lead", "Айжан Нурланова", "lead", TEAMS[1]), ("dir", "Ерлан Касымов", "dir", None),
-         ("comp", "Гульнара Омарова", "comp", None), ("admin", "Тимур Сейтказы", "adm", None)]
+STAFF = [("qa", "Дана Кудайберген", "qa", None),
+         ("lead", "Айжан Нурланова", "lead", TEAMS[1]),
+         ("admin", "Тимур Сейтказы", "adm", None)]
 NAME_PAT = [r"зовут\s+([А-ЯЁ][а-яё]+)", r"\bя\s+([А-ЯЁ][а-яё]+)", r"атым\s+([А-ЯЁӘҒҚҢӨҰҮҺІ][а-яёәғқңөұүһі]+)",
             r"([А-ЯЁӘҒҚҢӨҰҮҺІ][а-яёәғқңөұүһі]+)\s+(?:болам|бойынша|есімім)", r"(?:name is|I am|I'm|this is)\s+([A-Z][a-z]+)"]
 FALLBACK = ["Алия", "Нурлан", "Динара", "Арман", "Сауле", "Ерлан", "Мадина"]
@@ -50,8 +50,8 @@ def seed():
     crit = [{**c, "sec": SECTION.get(c["id"], 2)} for c in cl_src["criteria"]]
     cl_id = run("""INSERT INTO checklists(slug,name,channel,version,status,criteria,note,created_by,published_by,published_at,created_at)
                    VALUES ('chat','Чаты и звонки','all',1,'published',%s,'Исходная версия по спецификации Freedom',%s,%s,now()-interval '7 days',now()-interval '7 days') RETURNING id""",
-                J(crit), ids["head"], ids["head"])["id"]
-    engine.audit(ids["head"], "Опубликовал чек-лист", "Чаты и звонки v1")
+                J(crit), ids["qa"], ids["qa"])["id"]
+    engine.audit(ids["qa"], "Опубликовал чек-лист", "Чаты и звонки v1")
     cl = engine.checklist(cl_id)
 
     recs = json.loads((ROOT / "data/dev.json").read_text(encoding="utf-8"))["data"]["records"]

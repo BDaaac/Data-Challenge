@@ -10,7 +10,7 @@ export async function checklists(el, ctx) {
   if (ctx.arg) return editor(el, ctx);
   const list = await api("/checklists");
   if (!ctx.alive()) return;
-  const R = ctx.me.role, can = ["head", "qa"].includes(R), draft = list.find(c => c.status === "draft");
+  const R = ctx.me.role, can = ["qa"].includes(R), draft = list.find(c => c.status === "draft");
   el.innerHTML = `<div class="ph"><div><h1>Чек-листы</h1><p>Критерии, веса и правила, по которым модель оценивает диалоги. Активная версия одна; изменения готовятся в черновике, проверяются пробным прогоном и публикуются руководителем QA. Каждая оценка помнит, по какой версии сделана.</p></div>
     ${can ? `<div class="acts">${draft ? `<a class="btn pri" href="#/checklists/${draft.id}">Продолжить черновик v${draft.version}</a>` : `<button class="btn pri" id="nd">Изменить чек-лист</button>`}</div>` : ""}</div>
     <div class="tw"><table class="t"><thead><tr><th>Версия</th><th>Название</th><th class="r">Критериев</th><th>Статус</th><th>Создал</th><th>Опубликовал</th><th>Комментарий</th></tr></thead><tbody>
@@ -26,7 +26,7 @@ async function editor(el, ctx) {
   const id = +ctx.arg;
   const c = await api("/checklists/" + id);
   if (!ctx.alive()) return;
-  const R = ctx.me.role, isDraft = c.status === "draft", can = isDraft && ["head", "qa"].includes(R);
+  const R = ctx.me.role, isDraft = c.status === "draft", can = isDraft && ["qa"].includes(R);
   const st = ED[id] || (ED[id] = { crit: structuredClone(c.criteria), dirty: false, open: null, note: c.note || "", trial: null, tsel: new Set(c.diff?.model_crits?.slice(0, 4) || []) });
   if (!st.dirty) st.crit = structuredClone(c.criteria);
   const draw = (srv = c) => {
@@ -60,7 +60,7 @@ async function editor(el, ctx) {
     }).join("");
     const errs = srv.errors || [];
     el.innerHTML = `<div class="ph"><div><h1>«${esc(c.name)}» v${c.version} ${pill(...ST[c.status])}</h1><p>${isDraft ? `Черновик на основе активной v${df?.base_version}. Модель и операторы его не видят, пока руководитель QA не опубликует.` : c.status === "published" ? `Активная версия. Опубликована ${dt(c.published_at)}${c.published_by ? "" : ""}. Изменения — через черновик.` : "Архивная версия: по ней сделаны старые оценки, они хранятся с этой версией."}</p></div>
-      <div class="acts">${c.status === "published" && ["head", "qa"].includes(R) && c.stale ? `<button class="btn" id="apply">Применить к старым оценкам (${c.stale})</button>` : ""}${can ? `<button class="btn danger" id="drop">Удалить черновик</button>` : ""}</div></div>
+      <div class="acts">${c.status === "published" && ["qa"].includes(R) && c.stale ? `<button class="btn" id="apply">Применить к старым оценкам (${c.stale})</button>` : ""}${can ? `<button class="btn danger" id="drop">Удалить черновик</button>` : ""}</div></div>
       <div class="cols ww"><div>
         ${can ? `<div class="row" style="margin-bottom:4px"><span class="${sum === 100 ? "fg2" : ""}" style="${sum === 100 ? "" : "color:var(--bad);font-weight:500"}">Сумма весов: <b class="num">${sum}</b> из 100</span><span class="grow"></span><button class="btn sm" id="addc">Добавить критерий</button>${st.dirty ? `<button class="btn pri sm" id="save">Сохранить изменения</button>` : `<span class="sm muted">Сохранено</span>`}</div>` : ""}
         ${rows}</div>
@@ -76,7 +76,7 @@ async function editor(el, ctx) {
           <div class="row" style="margin-top:10px"><button class="btn" id="trial" ${st.tsel.size && st.tsel.size <= 4 && !st.dirty ? "" : "disabled"}>Проверить на диалогах</button>${st.tsel.size > 4 ? `<span class="sm" style="color:var(--bad)">не больше 4 критериев</span>` : ""}</div>
           ${st.trial ? trialTable(st.trial, st.crit) : ""}</div>` : ""}
         ${isDraft ? `<div class="panel"><label class="l" for="note" style="margin-top:0">Комментарий к версии</label><textarea class="f" id="note" rows="2" placeholder="Например: уточнили правило решения вопроса" ${can ? "" : "disabled"}>${esc(st.note)}</textarea>
-          ${R === "head" ? `<button class="btn pri" id="pub" style="margin-top:12px" ${errs.length || st.dirty || !df?.changes.length ? "disabled" : ""}>Опубликовать v${c.version}</button><p class="sm muted" style="margin-top:6px">После публикации новые диалоги оцениваются по v${c.version}. Старые оценки остаются по своей версии, пока вы их не примените.</p>`
+          ${R === "qa" ? `<button class="btn pri" id="pub" style="margin-top:12px" ${errs.length || st.dirty || !df?.changes.length ? "disabled" : ""}>Опубликовать v${c.version}</button><p class="sm muted" style="margin-top:6px">После публикации новые диалоги оцениваются по v${c.version}. Старые оценки остаются по своей версии, пока вы их не примените.</p>`
             : `<p class="sm muted" style="margin-top:10px">Публикует руководитель QA. Сохраните черновик — он увидит его в списке версий.</p>`}</div>` : ""}
       </div></div>`;
     bind(srv);

@@ -5,17 +5,12 @@ import * as V from "./views.js";
 const NAV = {
   qa: [["Работа", [["queue", "Очередь проверки", "queue"], ["upload", "Новые диалоги"], ["dialogs", "Все диалоги"], ["violations", "Грубые ошибки", "violations"], ["appeals", "Апелляции", "appeals"]]],
        ["Качество", [["checklists", "Чек-листы"], ["calibration", "Калибровка модели"], ["dashboard", "Где теряем качество"]]]],
-  op: [["Мои оценки", [["my", "Мои диалоги", "unread"], ["appeals", "Мои апелляции", "appeals"], ["rules", "Как меня оценивают"]]]],
-  lead: [["Группа", [["team", "Моя группа"], ["dialogs", "Диалоги группы"], ["appeals", "Апелляции группы", "appeals"], ["violations", "Грубые ошибки", "violations"]]], ["Аналитика", [["dashboard", "Где теряем качество"]]]],
-  head: [["Аналитика", [["dashboard", "Обзор качества"], ["team", "Операторы"], ["calibration", "Калибровка модели"]]],
-         ["Работа", [["queue", "Очередь проверки", "queue"], ["upload", "Новые диалоги"], ["dialogs", "Все диалоги"], ["violations", "Грубые ошибки", "violations"], ["appeals", "Апелляции", "appeals"]]],
-         ["Настройка", [["checklists", "Чек-листы"], ["audit", "Журнал действий"]]]],
-  dir: [["Аналитика", [["dashboard", "Обзор качества"], ["violations", "Грубые ошибки", "violations"]]]],
-  comp: [["Комплаенс", [["violations", "Грубые ошибки", "violations"], ["audit", "Журнал действий"]]]],
+  op: [["Мои оценки", [["my", "Мои диалоги", "unread"], ["appeals", "Мои апелляции", "appeals"], ["rules", "Как меня оценивают"], ["development", "Задачи развития"]]]],
+  lead: [["Группа", [["team", "Моя группа"], ["development", "Задачи развития"], ["dialogs", "Диалоги группы"], ["appeals", "Апелляции группы", "appeals"], ["violations", "Грубые ошибки", "violations"]]], ["Аналитика", [["dashboard", "Где теряем качество"]]]],
   adm: [["Администрирование", [["users", "Пользователи"], ["settings", "Модель и оценка"], ["audit", "Журнал действий"]]], ["Данные", [["upload", "Новые диалоги"], ["dialogs", "Все диалоги"]]]]
 };
-const HOME = { qa: "queue", op: "my", lead: "team", head: "dashboard", dir: "dashboard", comp: "violations", adm: "users" };
-const EXTRA = { qa: ["dialog", "jobs", "rules"], op: ["dialog"], lead: ["dialog", "rules"], head: ["dialog", "jobs", "rules"], dir: ["dialog"], comp: ["dialog", "dialogs"], adm: ["dialog", "jobs", "checklists"] };
+const HOME = { qa: "queue", op: "my", lead: "team", adm: "users" };
+const EXTRA = { qa: ["dialog", "jobs", "rules"], op: ["dialog"], lead: ["dialog", "rules"], adm: ["dialog", "jobs", "checklists"] };
 const TITLES = { queue: "Очередь проверки", upload: "Новые диалоги", jobs: "Оценка пакета", dialogs: "Диалоги", violations: "Грубые ошибки", appeals: "Апелляции",
   checklists: "Чек-листы", calibration: "Калибровка модели", my: "Мои диалоги", rules: "Как меня оценивают", team: "Операторы", dashboard: "Обзор качества",
   users: "Пользователи", settings: "Модель и оценка", audit: "Журнал действий", dialog: "Диалог" };
@@ -23,7 +18,7 @@ const TITLES = { queue: "Очередь проверки", upload: "Новые �
 let me = null, pop = null, poll = null, curView = null, demoUsers = [];
 let lastList = (() => { try { return sessionStorage.getItem("cqa-last") } catch { return null } })();
 const go = h => { location.hash = "#/" + h; };
-const DEMO_ROLES = ["qa", "op", "head", "lead", "dir", "comp", "adm"]; // первые три — основные сценарии защиты
+const DEMO_ROLES = ["qa", "op", "lead", "adm"]; // первые три — основные сценарии защиты
 async function loadCritNames() { try { const c = await api("/checklists/" + me.checklist.id); setCritNames(c.criteria); } catch {} }
 const allowed = (r, v) => NAV[r].some(g => g[1].some(i => i[0] === v)) || EXTRA[r].includes(v);
 

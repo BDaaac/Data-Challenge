@@ -46,6 +46,27 @@ class Workflows(unittest.TestCase):
         self.assertEqual(lead.post("/api/appeals/1/withdraw",json={}).status_code,403)
         self.assertEqual(lead.post("/api/appeals/1/decide",json={}).status_code,403)
 
+    def test_development(self):
+        lead,u=self.login("lead")
+        d=db.one("SELECT * FROM dialogs WHERE team=%s LIMIT 1",u["team"])
+        db.run("UPDATE dialogs SET wf_status='published' WHERE id=%s",d["id"])
+        op,_=self.login("op",d["operator"])
+        body={"request_key":str(uuid.uuid4()),"dialog_id":d["id"],"instruction":"Разобрать ошибку и описать исправление"}
+        r=lead.post("/api/development",json=body)
+        self.assertEqual(r.status_code,200,r.text)
+        tid=r.json()["id"]
+        self.assertEqual(lead.post("/api/development",json=body).json()["id"],tid)
+        self.assertEqual(op.post(f"/api/development/{tid}/review",json={}).status_code,403)
+        self.assertEqual(op.post(f"/api/development/{tid}/submit",json={"response":"Разбор выполнен"}).status_code,200)
+        self.assertEqual(lead.post(f"/api/development/{tid}/review",json={"accepted":True,"feedback":"Результат подтверждён"}).status_code,200)
+        self.assertEqual(op.get("/api/development").json()[0]["status"],"completed")
+        other=db.one("SELECT id FROM users WHERE role='op' AND name<>%s LIMIT 1",d["operator"])
+        foreign=TestClient(main.app); self.addCleanup(foreign.close)
+        foreign.post(f"/api/auth/demo/{other['id']}")
+        self.assertEqual(foreign.get("/api/development").json(),[])
+        self.assertEqual(foreign.post(f"/api/development/{tid}/submit",json={"response":"Подмена ответа"}).status_code,404)
+        self.assertEqual({r["role"] for r in db.all_("SELECT DISTINCT role FROM users")},{"qa","op","lead","adm"})
+
     def test_atomic_appeal(self):
         d=db.one("SELECT d.* FROM dialogs d JOIN evaluations e ON e.dialog_id=d.id AND e.is_current WHERE d.wf_status IN ('published','acknowledged') AND e.status='done' LIMIT 1")
         self.assertIsNotNone(d)

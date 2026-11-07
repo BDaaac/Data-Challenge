@@ -6,7 +6,7 @@ export { checklists, rules } from "./v_checklists.js";
 
 const ph = (title, text, acts = "") => `<div class="ph"><div><h1>${title}</h1>${text ? `<p>${text}</p>` : ""}</div>${acts ? `<div class="acts">${acts}</div>` : ""}</div>`;
 const stat = (l, v, d = "", txt = false) => `<div><div class="l">${l}</div><div class="v ${txt ? "txt" : ""}">${v}</div>${d ? `<div class="d">${d}</div>` : ""}</div>`;
-const isStaff = r => ["qa", "head", "adm"].includes(r);
+const isStaff = r => ["qa", "adm"].includes(r);
 
 // ======================= очередь проверки =======================
 export async function queue(el, ctx) {
@@ -177,7 +177,7 @@ async function rulesCache() { if (!_rules || Date.now() - _rules.t > 30000) { co
 // ======================= грубые ошибки =======================
 export async function violations(el, ctx) {
   const st = violations.st || (violations.st = { s: "open", open: null, note: {} });
-  const R = ctx.me.role, can = ["comp", "head"].includes(R);
+  const R = ctx.me.role, can = ["qa"].includes(R);
   const { rows, counts } = await api("/violations?status=" + st.s);
   if (!ctx.alive()) return;
   const tabs = [["open", "Открытые"], ["new", "Новые"], ["work", "В работе"], ["closed", "Закрытые"], ["all", "Все"]];
@@ -224,7 +224,7 @@ async function appealOne(el, ctx) {
   const a = await api("/appeals/" + id);
   if (!ctx.alive()) return;
   const e = a.evaluation, cr = Object.fromEntries(e.checklist.criteria.map(c => [c.id, c])), tr = a.dialog.transcript;
-  const open = a.status === "open", canDecide = open && ["qa", "head"].includes(R);
+  const open = a.status === "open", canDecide = open && ["qa"].includes(R);
   const refs = new Set(a.items.flatMap(i => e.items[i.crit]?.evidence || []));
   (a.text.match(/#(\d+)/g) || []).forEach(m => refs.add(+m.slice(1)));
   el.innerHTML = ph(`Апелляция А-${a.id}`, `${esc(a.operator_name)} · диалог <a href="#/dialog/${esc(a.dialog_id)}">${esc(a.dialog_id)}</a> · подана ${dt(a.created_at)}`, pill(AP_ST[a.status][0], AP_ST[a.status][1]))
@@ -242,7 +242,6 @@ async function appealOne(el, ctx) {
          <div class="err hidden" id="aerr" role="alert"></div>
          <div class="row" style="margin-top:12px"><span class="sm muted" id="prev"></span><span class="grow"></span><button class="btn pri" id="dec">Принять решение</button></div></div>` : ""}
        ${!open ? `<div class="panel"><div class="sm muted">Решение${a.decided_name ? " · " + esc(a.decided_name) : ""} · ${dt(a.decided_at)}</div><p style="margin-top:6px">${esc(a.comment || "")}</p>${a.score_after != null ? `<p class="sm" style="margin-top:6px">Балл: ${fmt(a.score_before)} → <b>${fmt(a.score_after)}</b></p>` : ""}</div>` : ""}
-       ${open && R === "lead" ? `<div class="panel"><label class="l" for="wd" style="margin-top:0">Отозвать апелляцию</label><textarea class="f" id="wd" placeholder="Причина отзыва: оператор увидит её"></textarea><div class="row" style="margin-top:10px"><span class="grow"></span><button class="btn" id="wdb">Отозвать</button></div></div>` : ""}
        ${open && R === "op" ? `<div class="row"><span class="grow"></span><button class="btn" id="wdo">Отозвать апелляцию</button></div>` : ""}
      </div>
      <div class="panel" style="padding:0;position:sticky;top:0;max-height:calc(100vh - 140px);display:flex;flex-direction:column"><div class="sh" style="padding:12px 16px;border-bottom:1px solid var(--line)">Переписка · ${tr.length} реплик · отмечены упомянутые</div>
@@ -265,7 +264,6 @@ async function appealOne(el, ctx) {
       } catch (x) { const er = $("#aerr", el); er.textContent = x.message; er.classList.remove("hidden"); }
     });
   }
-  const wdb = $("#wdb", el); if (wdb) wdb.onclick = () => busy(wdb, async () => { await api(`/appeals/${id}/withdraw`, { body: { comment: $("#wd", el).value } }); toast("Апелляция отозвана"); ctx.refresh(); await appealOne(el, ctx); });
   const wdo = $("#wdo", el); if (wdo) wdo.onclick = () => busy(wdo, async () => { await api(`/appeals/${id}/withdraw`, { body: { comment: "Отозвана оператором" } }); toast("Апелляция отозвана"); ctx.refresh(); await appealOne(el, ctx); });
 }
 
@@ -291,8 +289,8 @@ export async function dashboard(el, ctx) {
   if (!ctx.alive()) return;
   const st = dashboard.st || (dashboard.st = { open: null });
   const R = ctx.me.role, p = o.process, maxPts = Math.max(...o.loss.map(l => l.points), 0.01);
-  const toDialogs = q => (["dir"].includes(R) ? null : `dialogs/${q}`);
-  el.innerHTML = ph(R === "lead" ? `Где теряем качество · ${esc(ctx.me.team)}` : R === "dir" ? "Обзор качества" : "Где теряем качество", "Средний балл, грубые ошибки и критерии, на которых операторы теряют больше всего баллов. Считается по текущим оценкам; диалоги с неполной оценкой не входят.")
+  const toDialogs = q => (["lead"].includes(R) ? null : `dialogs/${q}`);
+  el.innerHTML = ph(R === "lead" ? `Где теряем качество · ${esc(ctx.me.team)}` : R === "lead" ? "Обзор качества" : "Где теряем качество", "Средний балл, грубые ошибки и критерии, на которых операторы теряют больше всего баллов. Считается по текущим оценкам; диалоги с неполной оценкой не входят.")
     + `<div class="strip">${stat("Средний балл", fmt(o.avg), `${o.done} ${plural(o.done, "оценённый диалог", "оценённых диалога", "оценённых диалогов")}`)}${stat("Грубые ошибки", o.critical, o.done ? `${Math.round(o.critical / o.done * 100)}% диалогов` : "")}${stat("Охват оценкой", o.dialogs ? Math.round(o.evaluated / o.dialogs * 100) + "%" : "—", `${o.evaluated} из ${o.dialogs}`)}${stat("Стоимость на диалог", money(o.cost_per, 3), `${String(Math.round(o.sec * 10) / 10).replace(".", ",")} с · всего ${money(o.cost, 2)}`)}</div>`
     + `<div class="cols w"><div class="sec"><h2>Потери баллов по критериям</h2><p class="sm muted" style="margin:-6px 0 10px">Сколько баллов в среднем теряет диалог на критерии · доля нарушений среди применимых.</p><div class="bars">
         ${o.loss.map(l => `<button class="bar" data-l="${l.crit}" aria-expanded="${st.open === l.crit}"><span>${l.crit.slice(1)}. ${esc(l.name)}</span><span class="tr"><span class="fl ${l.points / maxPts > .6 ? "" : l.points / maxPts > .3 ? "m" : "l"}" style="width:${l.points / maxPts * 100}%;display:block"></span></span><span class="n">−${fmt(l.points)}</span><span class="n muted">${l.rate}%</span></button>
@@ -417,3 +415,5 @@ function fmtDetails(d) {
   if (d.changes) return d.changes.map(c => `${c.crit.slice(1)}: ${({ added: "добавлен", removed: "удалён", weight: `вес ${c.before}→${c.after}`, semantic: "изменён смысл", section: "раздел" })[c.kind]}`).join(", ");
   return Object.entries(d).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.length : typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ");
 }
+
+export { development } from "./development.js";

@@ -285,7 +285,7 @@ def after_evaluation(eval_id):
     if wf == "published" and prev != "published" and ev["trigger"] == "initial":
         notify(f"Новая оценка {d['id']}: {total}", f"dialog/{d['id']}", user_ids=[operator_user(d["operator"])])
     if ev["critical"] and ev["calls"] and ev["trigger"] in ("initial", "rescore"):
-        notify(f"Грубая ошибка в {d['id']} ({d['operator']})", f"dialog/{d['id']}", roles=("qa", "comp", "lead"), team=d["team"])
+        notify(f"Грубая ошибка в {d['id']} ({d['operator']})", f"dialog/{d['id']}", roles=("qa", "lead"), team=d["team"])
     if wf == "error":
         notify(f"Оценка {d['id']} неполная: сбой части критериев", f"dialog/{d['id']}", user_ids=[ev["created_by"]])
 

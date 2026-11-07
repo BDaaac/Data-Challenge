@@ -34,7 +34,7 @@ function draw(el, ctx, data, st) {
   const R = ctx.me.role, tr = d.transcript, crit = e?.checklist.criteria || [];
   const items = e?.items || {};
   const openAp = appeals.find(a => a.status === "open");
-  const canEdit = ["qa", "head"].includes(R) && e && e.status !== "running" && d.wf_status !== "evaluating";
+  const canEdit = ["qa"].includes(R) && e && e.status !== "running" && d.wf_status !== "evaluating";
   const opCan = R === "op" && e && ["published", "acknowledged", "revised"].includes(d.wf_status) && !openAp;
   const running = e?.status === "running";
   const s = e?.score;
@@ -76,7 +76,7 @@ function draw(el, ctx, data, st) {
     if (c.type === "flag" && a === "yes") tags.push(`<span class="ox-tag bad">Грубая ошибка</span>`);
     if (it.source === "qa") tags.push(`<span class="ox-tag info">Изменено QA</span>`);
     if (it.source === "appeal") tags.push(`<span class="ox-tag ok">По апелляции</span>`);
-    if (low && ["qa", "head"].includes(R)) tags.push(`<span class="ox-tag warn">Модель сомневается</span>`);
+    if (low && ["qa"].includes(R)) tags.push(`<span class="ox-tag warn">Модель сомневается</span>`);
     (it.flags || []).filter(f => f !== "low_conf").forEach(f => tags.push(`<span class="ox-tag warn">${esc(REASON[f === "bad_evidence" ? "no_evidence" : f]?.[1] || f)}</span>`));
     if (st.draft[id] != null && R === "op") tags.push(`<span class="ox-tag info">В апелляции</span>`);
 
@@ -150,9 +150,9 @@ function draw(el, ctx, data, st) {
   // ---------- действия ----------
   const opDraft = R === "op" ? Object.keys(st.draft) : [];
   let acts = "", hint = "";
-  if (["qa", "head", "adm"].includes(R) && (!e || d.wf_status === "new")) { hint = "Диалог загружен, но ещё не оценён."; acts = `<button class="btn pri" data-eval>Оценить моделью</button>`; }
+  if (["qa", "adm"].includes(R) && (!e || d.wf_status === "new")) { hint = "Диалог загружен, но ещё не оценён."; acts = `<button class="btn pri" data-eval>Оценить моделью</button>`; }
   else if (running) hint = "Модель оценивает критерии параллельно, ответы появляются по мере готовности.";
-  else if (["qa", "head"].includes(R)) {
+  else if (["qa"].includes(R)) {
     if (e?.status === "partial") { hint = "Часть критериев не оценена из-за сбоя."; acts = `<button class="btn pri" data-retry>Повторить упавшие</button>`; }
     else if (d.wf_status === "review") { hint = "Оператор увидит оценку после публикации."; acts = `<button class="btn" data-rescore title="Новый вызов модели по активной версии">Переоценить</button><button class="btn pri" data-confirm>Подтвердить и опубликовать</button>`; }
     else if (openAp) { hint = `Открыта апелляция А-${openAp.id}.`; acts = `<a class="btn pri" href="#/appeals/${openAp.id}">Рассмотреть апелляцию</a>`; }
@@ -163,19 +163,19 @@ function draw(el, ctx, data, st) {
     else if (openAp) { hint = `Апелляция А-${openAp.id} на рассмотрении у QA.`; acts = `<button class="btn" data-apwd="${openAp.id}">Отозвать апелляцию</button>`; }
     else if (opCan) hint = "Не согласны? Нажмите «Оспорить» у вопроса.";
   } else if (R === "lead") { hint = "Просмотр. Изменить оценку может QA-специалист."; if (openAp) acts = `<a class="btn" href="#/appeals/${openAp.id}">Апелляция А-${openAp.id}</a>`; }
-  else if (R === "comp" && e?.critical) { hint = `Грубое нарушение · ${({ new: "новое", work: "в работе", closed: "закрыто" })[d.viol_status]}`; acts = `<a class="btn pri" href="#/violations">К реестру нарушений</a>`; }
+  else if (R === "qa" && e?.critical) { hint = `Грубое нарушение · ${({ new: "новое", work: "в работе", closed: "закрыто" })[d.viol_status]}`; acts = `<a class="btn pri" href="#/violations">К реестру нарушений</a>`; }
   else hint = "Только просмотр.";
 
   const ver = e?.checklist.version;
   const banners = [];
-  if (e && d.wf_status === "review" && ["qa", "head"].includes(R)) banners.push(`<div class="ox-note warn">${ICON.info}<span>Оценка ещё не видна оператору. ${reasonPills(e.review)}</span></div>`);
+  if (e && d.wf_status === "review" && ["qa"].includes(R)) banners.push(`<div class="ox-note warn">${ICON.info}<span>Оценка ещё не видна оператору. ${reasonPills(e.review)}</span></div>`);
   if (openAp && R !== "op") banners.push(`<div class="ox-note">${ICON.info}<span>Оператор подал апелляцию А-${openAp.id}: «${esc(cut(openAp.text, 160))}» <a href="#/appeals/${openAp.id}">Открыть</a></span></div>`);
 
   const apForm = R === "op" && opDraft.length ? `<section class="ox-card apf" id="apform"><div class="ox-top"><b>Апелляция</b><span class="muted">вопросы ${opDraft.map(x => x.slice(1)).join(", ")}</span></div>
       <div class="ox-pad"><label class="l" for="aptext">Почему оценка неверна? Сошлитесь на реплики, например #12</label><textarea class="f" id="aptext">${esc(st.apText)}</textarea><div class="err hidden" id="aperr" role="alert"></div>
       <div class="acts"><button class="btn pri" data-apsend>Отправить апелляцию</button><button class="btn" data-apclear>Отменить</button></div></div></section>` : "";
 
-  const reasons = e && d.wf_status === "review" && ["qa", "head"].includes(R) ? `<div class="sc-why"><span class="muted">Почему на проверке:</span> ${reasonPills(e.review)}</div>` : "";
+  const reasons = e && d.wf_status === "review" && ["qa"].includes(R) ? `<div class="sc-why"><span class="muted">Почему на проверке:</span> ${reasonPills(e.review)}</div>` : "";
   const apNote = openAp && R !== "op" ? `<div class="ox-note">${ICON.info}<span>Апелляция А-${openAp.id}: «${esc(cut(openAp.text, 140))}» <a href="#/appeals/${openAp.id}">Открыть</a></span></div>` : "";
 
   const score = !e ? `<div class="sc-empty"><h2>${d.wf_status === "evaluating" ? "Оценивается…" : "Ещё не оценён"}</h2><p class="muted">${d.wf_status === "evaluating" ? "Модель проверяет критерии, страница обновится сама." : R === "op" ? "Оценка появится после проверки QA." : "Модель проверит диалог по активному чек-листу: по одному запросу на критерий, около 5 секунд и $0,02."}</p></div>`
