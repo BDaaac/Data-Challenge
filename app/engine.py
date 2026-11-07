@@ -4,7 +4,7 @@ import hashlib, json, sys, time, traceback
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal, ROUND_HALF_UP
 
-from .db import ROOT, J, all_, one, run, tx
+from .db import atomic_workflow, ROOT, J, all_, one, run, tx
 
 sys.path.insert(0, str(ROOT / "scripts"))
 import cqa  # noqa: E402  ядро промптов и вызова модели
@@ -256,6 +256,7 @@ def run_evaluation(eval_id, only=None):
     after_evaluation(eval_id)
 
 
+@atomic_workflow
 def after_evaluation(eval_id):
     """Сделать оценку текущей, выставить статус диалога, разослать уведомления."""
     ev = one("SELECT * FROM evaluations WHERE id=%s", eval_id)
@@ -391,6 +392,7 @@ def recalc_all(cl, user_id):
     return changed
 
 
+@atomic_workflow
 def override(dialog_id, crit_id, answer, reason, user_id, source="qa"):
     """Решение человека: новая версия оценки с изменённым ответом, история сохраняется."""
     base = current_eval(dialog_id)

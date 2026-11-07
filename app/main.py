@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import auth, engine
 from .auth import COOKIE, current_user, roles
-from .db import ROOT, J, all_, init_schema, one, run, tx
+from .db import atomic_workflow, ROOT, J, all_, init_schema, one, run, tx
 from .seed import TEAMS, operator_name
 
 @asynccontextmanager
@@ -366,6 +366,7 @@ def retry(eid: int, u=Depends(roles(*REVIEWERS))):
 
 # ---------- решения QA ----------
 @app.post("/api/dialogs/{did}/override")
+@atomic_workflow
 def override(did: str, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
     d = visible_dialog(u, did)
     e = engine.current_eval(did) or bad("Диалог ещё не оценён", 409)
@@ -405,9 +406,12 @@ def lbl(c, a):
 
 
 @app.post("/api/dialogs/{did}/confirm")
+@atomic_workflow
 def confirm(did: str, u=Depends(roles(*REVIEWERS))):
     d = visible_dialog(u, did)
     e = engine.current_eval(did) or bad("Диалог ещё не оценён", 409)
+    if e["status"] != "done":
+        bad("Нельзя публиковать незавершённую оценку", 409)
     if d["wf_status"] not in ("review",):
         bad("Подтверждать нечего: оценка не ждёт проверки", 409)
     run("UPDATE dialogs SET wf_status='published' WHERE id=%s", did)
@@ -422,9 +426,10 @@ def confirm(did: str, u=Depends(roles(*REVIEWERS))):
 
 # ---------- оператор и апелляции ----------
 @app.post("/api/dialogs/{did}/acknowledge")
+@atomic_workflow
 def acknowledge(did: str, u=Depends(roles("op"))):
     d = visible_dialog(u, did)
-    if d["wf_status"] != "published":
+    if d["wf_status"] not in ("published", "revised"):
         bad("Ознакомиться можно только с новой опубликованной оценкой", 409)
     run("UPDATE dialogs SET wf_status='acknowledged' WHERE id=%s", did)
     engine.event(did, u["id"], "Оператор ознакомился с оценкой")
@@ -433,6 +438,7 @@ def acknowledge(did: str, u=Depends(roles("op"))):
 
 
 @app.post("/api/dialogs/{did}/appeal")
+@atomic_workflow
 def appeal(did: str, body: dict = Body(...), u=Depends(roles("op"))):
     d = visible_dialog(u, did)
     if d["wf_status"] not in ("published", "acknowledged", "revised"):
@@ -446,6 +452,10 @@ def appeal(did: str, body: dict = Body(...), u=Depends(roles("op"))):
         bad("Выберите хотя бы один критерий и ответ, который считаете верным", 422)
     if len(text) < 10:
         bad("Опишите довод: без него QA не сможет рассмотреть апелляцию", 422)
+    if not isinstance(want, list) or any(not isinstance(w, dict) for w in want):
+        bad("Некорректный список критериев", 422)
+    if len({w.get("crit") for w in want}) != len(want):
+        bad("Критерии не должны повторяться", 422)
     out = []
     for w in want:
         c = cl.get(w.get("crit")) or bad("Нет такого критерия", 422)
@@ -485,6 +495,7 @@ def appeal_one(aid: int, u=Depends(current_user)):
 
 
 @app.post("/api/appeals/{aid}/decide")
+@atomic_workflow
 def decide(aid: int, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
     ap = one("SELECT * FROM appeals WHERE id=%s", aid) or bad("Апелляция не найдена", 404)
     if ap["status"] != "open":
@@ -520,6 +531,7 @@ def decide(aid: int, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
 
 
 @app.post("/api/appeals/{aid}/withdraw")
+@atomic_workflow
 def withdraw(aid: int, body: dict = Body(...), u=Depends(roles("op"))):
     ap = one("SELECT * FROM appeals WHERE id=%s", aid) or bad("Апелляция не найдена", 404)
     d = visible_dialog(u, ap["dialog_id"])

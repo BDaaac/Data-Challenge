@@ -1,5 +1,7 @@
 """Подключение к PostgreSQL: пул соединений и короткие помощники для запросов."""
 import json, os
+from contextvars import ContextVar
+from functools import wraps
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -16,6 +18,7 @@ for _line in (ROOT / ".env").read_text(encoding="utf-8").splitlines() if (ROOT /
 DSN = os.environ.get("DATABASE_URL", "postgresql://cqa@localhost:5433/cqa")
 psycopg2.extras.register_default_jsonb(loads=json.loads, globally=True)
 _pool = None
+_connection = ContextVar("transaction_connection", default=None)
 
 
 def pool():
@@ -28,7 +31,13 @@ def pool():
 @contextmanager
 def tx():
     """Транзакция: commit при успехе, rollback при исключении."""
+    existing = _connection.get()
+    if existing is not None:
+        with existing.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            yield cur
+        return
     conn = pool().getconn()
+    token = _connection.set(conn)
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             yield cur
@@ -37,6 +46,7 @@ def tx():
         conn.rollback()
         raise
     finally:
+        _connection.reset(token)
         pool().putconn(conn)
 
 
@@ -65,3 +75,17 @@ def run(sql, *a):
 def init_schema():
     with tx() as c:
         c.execute((Path(__file__).parent / "schema.sql").read_text(encoding="utf-8"))
+
+
+def atomic_workflow(fn):
+    """One commit for a workflow and its audit/notifications; serialize writers.
+
+    The transaction-scoped lock also serializes concurrent actions in other workers.
+    Nested helpers use the same connection. Never submit background work here.
+    """
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        with tx() as cur:
+            cur.execute("SELECT pg_advisory_xact_lock(724197)")
+            return fn(*args, **kwargs)
+    return wrapped

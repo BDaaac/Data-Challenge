@@ -18,5 +18,5 @@ class AccessTests(unittest.TestCase):
     def test_string_false_is_not_approval(self):
         with patch.object(main,"one",return_value={"status":"open"}):
             with self.assertRaises(HTTPException) as error:
-                main.decide(1,{"decisions":{"c1":"false"}},{"id":1,"role":"qa"})
+                main.decide.__wrapped__(1,{"decisions":{"c1":"false"}},{"id":1,"role":"qa"})
             self.assertEqual(error.exception.status_code,422)
