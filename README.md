@@ -1,3 +1,5 @@
+**Команда: Digital_Yakuza**
+
 <a id="readme-top"></a>
 <div align="center">
 
