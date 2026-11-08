@@ -302,7 +302,7 @@ function draw(el, ctx, data, st) {
   } else if (R === "op") {
     if (opDraft.length) {
       acts = `<button class="btn pri sm" data-goap>Далее: указать причину (${opDraft.length})</button>`;
-    } else if (d.wf_status === "published") {
+    } else if (["published", "revised"].includes(d.wf_status)) {
       acts = `<button class="btn sm" data-start-appeal>Оспорить оценку</button><button class="btn pri sm" data-ack>Ознакомлен</button>`;
     } else if (openAp) {
       acts = `<button class="btn sm" data-apwd="${openAp.id}">Отозвать апелляцию</button>`;

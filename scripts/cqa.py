@@ -124,7 +124,7 @@ def decide(c, conds):
 def transcript_text(rec):
     lines = [f"Диалог {rec['conversation_id']} · канал: {rec['channel']} · язык: {rec['language']}"]
     for i, t in enumerate(rec["transcript"], 1):  # нумерация с 1, как в формате сдачи
-        lines.append(f"[{i}][{t['speaker']} {t['timestamp']}] {t['text']}")
+        lines.append(f"[{i}][{t['speaker']} {t.get('timestamp') or 'время не указано'}] {t['text']}")
     return "\n".join(lines)
 
 

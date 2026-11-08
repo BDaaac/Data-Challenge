@@ -5,6 +5,8 @@ import { qaOverview } from "./qa_overview.js";
 import * as OP from "./operator.js";
 import * as LEAD from "./lead.js";
 import { WORK } from "./workspace.js";
+import { development } from "./development.js";
+import { integrations } from "./integrations.js";
 
 const NAV = {
   qa: [["Проверка", [["queue", "Очередь разбора", "queue"], ["dialogs", "Все диалоги"], ["appeals", "Апелляции", "appeals"], ["violations", "Инциденты", "violations"], ["upload", "Загрузка данных"]]],
@@ -55,6 +57,11 @@ function validateSessionRole() {
   return false;
 }
 TITLES.home = "Рабочий стол";
+TITLES.development = "Задачи развития";
+TITLES.integrations = "Dynamics 365";
+EXTRA.op.push("development");
+EXTRA.lead.push("development");
+EXTRA.adm.push("integrations");
 TITLES["appeal-new"] = "Подать апелляцию";
 Object.assign(TITLES, {group:"Обзор группы", employee:"Карточка сотрудника", coaching:"Развитие сотрудника", "qa-control":"Мониторинг проверок"});
 
@@ -68,10 +75,27 @@ async function boot() {
     me = await api("/auth/me");
     if (!validateSessionRole()) return;
     await Promise.all([loadCritNames(), ensureDemoUsers()]);
+    await resolveDynamicsContext();
     route();
   } catch (e) {
     if (e.status === 401) renderLogin();
     else $("#root").innerHTML = `<div class="loading">${esc(e.message)}</div>`;
+  }
+}
+
+async function resolveDynamicsContext() {
+  const url = new URL(location.href), external = url.searchParams.get('dynamics_id');
+  if (!external) return false;
+  url.searchParams.delete('dynamics_id');
+  try {
+    const result = await api('/integrations/dynamics/dialog/' + encodeURIComponent(external));
+    url.hash = '#/dialog/' + encodeURIComponent(result.dialog_id);
+    history.replaceState(null, '', url);
+    return true;
+  } catch (e) {
+    history.replaceState(null, '', url);
+    toast(e.message, true);
+    return false;
   }
 }
 
@@ -141,11 +165,12 @@ async function renderLogin() {
   if (!demo.enabled) $("#lu")?.focus();
 }
 
-async function afterLogin(preserveHash = false) {
+async function afterLogin(preserveHash = true) {
   const prevHash = location.hash.replace(/^#\/?/, "");
   me = await api("/auth/me");
   if (!validateSessionRole()) return;
   await Promise.all([loadCritNames(), ensureDemoUsers()]);
+  if (await resolveDynamicsContext()) { route(); return; }
   if (preserveHash && prevHash) {
     const [v, ...rest] = prevHash.split("/");
     const arg = decodeURIComponent(rest.join("/"));
@@ -258,9 +283,9 @@ function renderShell(v, arg) {
   $(".side").appendChild(demoBox);
   const menus = {
     qa: [["home","Обзор"],["dialogs","Диалоги"],["checklists","Чек-листы"],["appeals","Апелляции"],["queue","Очередь QA"]],
-    op: [["home","Мои результаты"],["my","Мои оценки"],["rules","Критерии"],["appeals","Апелляции"]],
-    lead: [["home","Моя главная"],["group","Обзор группы"],["team","Команда"],["dialogs","Разборы"],["appeals","Апелляции"],["qa-control","Мониторинг проверок"]],
-    adm: [["home","Обзор"],["users","Пользователи"],["settings","Настройки"],["upload","Загрузка"],["dialogs","Диалоги"],["audit","История"]]
+    op: [["home","Мои результаты"],["my","Мои оценки"],["rules","Критерии"],["appeals","Апелляции"],["development","Развитие"]],
+    lead: [["home","Моя главная"],["group","Обзор группы"],["team","Команда"],["dialogs","Разборы"],["appeals","Апелляции"],["qa-control","Мониторинг проверок"],["development","Развитие"]],
+    adm: [["home","Обзор"],["users","Пользователи"],["settings","Настройки"],["upload","Загрузка"],["dialogs","Диалоги"],["audit","История"],["integrations","Интеграция"]]
   };
   const reviewPages = ["queue", "dialogs", "dialog", "appeals", "violations", "upload", "jobs"];
   const active = v === "employee" || v === "coaching" ? "team" : v === "appeal-new" ? "appeals" : v === "dialog" ? ({op:"my",lead:"dialogs",adm:"dialogs",qa:"dialogs"}[me.role]) : v === "jobs" ? "upload" : v;
@@ -290,7 +315,7 @@ function renderShell(v, arg) {
   const ctx = { me, go, arg, refresh: refreshMe, rerender: () => renderShell(v, arg), alive: () => curView === token && el.isConnected, switchRole };
   const opViews = {home:OP.home,my:OP.my,rules:OP.rules,appeals:OP.appeals,"appeal-new":OP.appealNew};
   const leadViews = {home:LEAD.home,group:LEAD.overview,team:LEAD.team,employee:LEAD.employee,dialogs:LEAD.dialogs,dialog:LEAD.dialog,appeals:LEAD.appeals,coaching:LEAD.coaching,"qa-control":LEAD.qaControl,dashboard:LEAD.overview};
-  const fn = me.role === "lead" && leadViews[v] ? leadViews[v] : me.role === "op" && opViews[v] ? opViews[v] : me.role === "qa" && v === "home" ? qaOverview : V[v];
+  const fn = v === "development" ? development : v === "integrations" ? integrations : me.role === "lead" && leadViews[v] ? leadViews[v] : me.role === "op" && opViews[v] ? opViews[v] : me.role === "qa" && v === "home" ? qaOverview : V[v];
   Promise.resolve(fn(el, ctx)).catch(e => {
     if (curView === token) el.innerHTML = `<div class="note bad" style="margin:24px">${esc(e.message)}</div>`;
   });

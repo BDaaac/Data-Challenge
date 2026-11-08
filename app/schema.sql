@@ -180,3 +180,75 @@ ALTER TABLE coaching_plans ADD COLUMN IF NOT EXISTS criterion text;
 ALTER TABLE coaching_plans ADD COLUMN IF NOT EXISTS criterion_name text;
 ALTER TABLE coaching_plans ADD COLUMN IF NOT EXISTS expected_result text NOT NULL DEFAULT '';
 ALTER TABLE coaching_plans ADD COLUMN IF NOT EXISTS priority text NOT NULL DEFAULT 'medium' CHECK (priority IN ('low','medium','high'));
+-- Legacy accounts retain identity/history, but require administrator reactivation.
+-- No unscoped director is silently granted access to a team.
+UPDATE users SET role=CASE WHEN role='dir' THEN 'lead' ELSE 'qa' END,
+                 active=false WHERE role IN ('head','dir','comp');
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('qa','op','lead','adm'));
+
+CREATE TABLE IF NOT EXISTS development_tasks (
+ id serial PRIMARY KEY,
+ dialog_id text NOT NULL REFERENCES dialogs(id),
+ operator_id int NOT NULL REFERENCES users(id),
+ created_by int NOT NULL REFERENCES users(id),
+ request_key uuid NOT NULL,
+ instruction text NOT NULL,
+ status text NOT NULL DEFAULT 'assigned' CHECK(status IN ('assigned','submitted','completed')),
+ response text,
+ feedback text,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ submitted_at timestamptz,
+ reviewed_at timestamptz,
+ UNIQUE(created_by, request_key)
+);
+
+CREATE TABLE IF NOT EXISTS dynamics_sync (
+ id serial PRIMARY KEY,
+ started_at timestamptz NOT NULL DEFAULT now(),
+ finished_at timestamptz,
+ status text NOT NULL DEFAULT 'running',
+ imported int NOT NULL DEFAULT 0,
+ skipped int NOT NULL DEFAULT 0,
+ error text
+);
+CREATE TABLE IF NOT EXISTS external_dialogs (
+ source text NOT NULL,
+ external_id text NOT NULL,
+ dialog_id text NOT NULL UNIQUE REFERENCES dialogs(id),
+ PRIMARY KEY(source,external_id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS one_current_evaluation ON evaluations(dialog_id) WHERE is_current;
+CREATE UNIQUE INDEX IF NOT EXISTS one_open_appeal ON appeals(dialog_id) WHERE status='open';
+
+ALTER TABLE evaluations ADD COLUMN IF NOT EXISTS published boolean NOT NULL DEFAULT false;
+-- Only known visible versions are backfilled; unpublished historical drafts remain private.
+UPDATE evaluations e SET published=true
+WHERE NOT published AND (
+ (is_current AND EXISTS (SELECT 1 FROM dialogs d WHERE d.id=e.dialog_id AND d.wf_status IN ('published','acknowledged','revised','appeal')))
+ OR EXISTS (SELECT 1 FROM appeals ap WHERE ap.eval_id=e.id)
+);
+
+CREATE TABLE IF NOT EXISTS development_events (
+ id serial PRIMARY KEY,
+ task_id int NOT NULL REFERENCES development_tasks(id),
+ user_id int NOT NULL REFERENCES users(id),
+ action text NOT NULL,
+ text text NOT NULL,
+ at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Link the existing manager forms to the employee's execution/review workflow.
+ALTER TABLE development_tasks ALTER COLUMN dialog_id DROP NOT NULL;
+ALTER TABLE development_tasks ADD COLUMN IF NOT EXISTS coaching_plan_id int UNIQUE REFERENCES coaching_plans(id);
+ALTER TABLE development_tasks ADD COLUMN IF NOT EXISTS team text;
+UPDATE development_tasks t SET team=d.team FROM dialogs d WHERE d.id=t.dialog_id AND t.team IS NULL;
+INSERT INTO development_tasks(dialog_id,operator_id,created_by,request_key,instruction,team,coaching_plan_id,status,created_at)
+SELECT p.dialog_id,u.id,p.created_by,md5('coaching-plan:'||p.id::text)::uuid,
+       concat_ws(E'\n\n',p.title,nullif(p.expected_result,''),nullif(p.note,'')),p.team,p.id,
+       CASE WHEN p.status='done' THEN 'completed' ELSE 'assigned' END,p.created_at
+FROM coaching_plans p JOIN users u ON u.name=p.operator AND u.team=p.team AND u.role='op' AND u.active
+WHERE p.kind IN ('plan','task')
+  AND (SELECT count(*) FROM users other WHERE other.name=p.operator AND other.team=p.team AND other.role='op' AND other.active)=1
+ON CONFLICT DO NOTHING;

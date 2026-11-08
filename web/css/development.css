@@ -1,0 +1,11 @@
+/* Development workflow uses the approved workspace typography and controls. */
+.qa-shell .development-summary{display:flex;flex-wrap:wrap;gap:24px;padding:18px 0;border-bottom:1px solid var(--line);color:var(--fg-2)}
+.qa-shell .development-task{padding:28px 0;border-bottom:1px solid var(--line);scroll-margin-top:100px}
+.qa-shell .development-task>header{display:flex;justify-content:space-between;align-items:start;gap:20px}
+.qa-shell .development-task h2{margin:0 0 8px;font-size:22px}
+.qa-shell .development-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+.qa-shell .development-response{margin:20px 0;padding-left:18px;border-left:2px solid var(--line)}
+.qa-shell .development-task form{max-width:760px;margin:24px 0}
+.qa-shell .development-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
+.qa-shell .development-task details{margin-top:24px;color:var(--fg-2)}
+@media(max-width:600px){.qa-shell .development-task>header{flex-direction:column}.qa-shell .development-summary{gap:12px}}

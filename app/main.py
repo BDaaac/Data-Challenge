@@ -1,5 +1,6 @@
 """HTTP API и раздача интерфейса.  Запуск: python -m uvicorn app.main:app --port 8000"""
 import csv, io, json, re, uuid
+from datetime import date, timedelta
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -11,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import auth, engine
 from .auth import COOKIE, current_user, roles
-from .db import ROOT, J, all_, init_schema, one, run, tx
+from .db import atomic_workflow, ROOT, J, all_, init_schema, one, run, tx
 from .seed import TEAMS, operator_name
 
 @asynccontextmanager
@@ -23,6 +24,10 @@ async def lifespan(_app):
 app = FastAPI(title="CQA Freedom", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 from .lead import router as lead_router
 app.include_router(lead_router)
+from .development import router as development_router
+app.include_router(development_router)
+from .dynamics import router as dynamics_router
+app.include_router(dynamics_router)
 WEB = ROOT / "web"
 STAFF_ALL = ("qa", "lead", "adm")
 REVIEWERS = ("qa",)
@@ -125,7 +130,7 @@ def counts(u):
     w, a = vis(u)
     r = one(f"""SELECT count(*) FILTER (WHERE d.wf_status IN ('review','appeal','error')) AS queue,
                        count(*) FILTER (WHERE e.critical AND d.viol_status<>'closed') AS violations,
-                       count(*) FILTER (WHERE d.wf_status='published') AS unread
+                       count(*) FILTER (WHERE d.wf_status IN ('published','revised')) AS unread
                 FROM dialogs d LEFT JOIN evaluations e ON e.dialog_id=d.id AND e.is_current WHERE {w}""", *a)
     ap = one(f"SELECT count(*) AS n FROM appeals ap JOIN dialogs d ON d.id=ap.dialog_id WHERE ap.status='open' AND {w}", *a)["n"]
     return {**r, "appeals": ap}
@@ -143,7 +148,7 @@ def vis(u, alias="d"):
 def visible_dialog(u, did):
     w, a = vis(u)
     d = one(f"SELECT d.* FROM dialogs d WHERE d.id=%s AND {w}", did, *a)
-    if not d:
+    if not d or (u["role"] == "op" and d["wf_status"] not in ("published", "acknowledged", "revised", "appeal")):
         bad("Диалог не найден или недоступен для вашей роли", 404)
     return d
 
@@ -157,8 +162,8 @@ FROM dialogs d LEFT JOIN evaluations e ON e.dialog_id=d.id AND e.is_current LEFT
 
 @app.get("/api/dialogs")
 def list_dialogs(q: str = "", status: str = "", lang: str = "", channel: str = "", critical: bool = False,
-                 failed: str = "", operator: str = "", team: str = "", reason: str = "", u=Depends(current_user)):
-    w, a = vis(u)
+                 failed: str = "", operator: str = "", team: str = "", reason: str = "", start: str = "", end: str = "", u=Depends(current_user)):
+    w, a = period_scope(u,start,end)
     cond, args = [w], list(a)
     if q:
         cond.append("(d.id ILIKE %s OR d.operator ILIKE %s)"); args += [f"%{q}%", f"%{q}%"]
@@ -180,22 +185,25 @@ def list_dialogs(q: str = "", status: str = "", lang: str = "", channel: str = "
         cond.append("d.wf_status NOT IN ('new','evaluating','review','error')")
     rows = all_(LIST_SQL + " WHERE " + " AND ".join(cond) + " ORDER BY d.occurred_at DESC", *args)
     if failed:
-        cl = {c["id"]: c for c in engine.active_checklist()["criteria"]}
-        if failed in cl:
-            ids = [r["eval_id"] for r in rows if r["eval_id"]]
-            bad_ids = set()
-            if ids:
-                for it in all_("SELECT eval_id, answer FROM eval_items WHERE crit_id=%s AND eval_id = ANY(%s)", failed, ids):
-                    if engine.is_failed(cl[failed], it["answer"]):
-                        bad_ids.add(it["eval_id"])
-            rows = [r for r in rows if r["eval_id"] in bad_ids]
+        ids=[r["eval_id"] for r in rows if r["eval_id"]]
+        matches=set()
+        for item in all_("""SELECT i.*, e.checklist_id FROM eval_items i JOIN evaluations e ON e.id=i.eval_id
+                            WHERE i.crit_id=%s AND i.eval_id=ANY(%s)""",failed,ids) if ids else []:
+            c=next((c for c in engine.checklist(item["checklist_id"])["criteria"] if c["id"]==failed),None)
+            if c and engine.is_failed(c,item["answer"]): matches.add(item["eval_id"])
+        rows=[r for r in rows if r["eval_id"] in matches]
     return rows
 
 
 @app.get("/api/queue")
 def queue(u=Depends(roles(*REVIEWERS))):
     rows = all_(LIST_SQL + " WHERE d.wf_status IN ('review','appeal','error')")
-    rank = lambda r: (0 if r["critical"] else 1 if r["wf_status"] == "appeal" else 2 if r["wf_status"] == "error" else 3, r["occurred_at"])
+    for r in rows:
+        r["waiting_since"]=one("""SELECT COALESCE(
+            (SELECT min(created_at) FROM appeals WHERE dialog_id=%s AND status='open'),
+            (SELECT finished_at FROM evaluations WHERE id=%s),
+            (SELECT created_at FROM dialogs WHERE id=%s)) AS since""",r["id"],r["eval_id"],r["id"])["since"]
+    rank = lambda r: (0 if r["critical"] else 1 if r["wf_status"] == "appeal" else 2 if r["wf_status"] == "error" else 3, r["waiting_since"])
     return sorted(rows, key=rank)
 
 
@@ -211,6 +219,9 @@ def dialog(did: str, u=Depends(current_user)):
     out["history"] = all_("""SELECT e.id, e.trigger, e.total, e.created_at, e.calls, e.cost, e.model, c.version, us.name AS who
                              FROM evaluations e JOIN checklists c ON c.id=e.checklist_id LEFT JOIN users us ON us.id=e.created_by
                              WHERE dialog_id=%s ORDER BY e.id DESC""", did)
+    if u["role"] == "op":
+        published_ids={r["id"] for r in all_("SELECT id FROM evaluations WHERE dialog_id=%s AND published",did)}
+        out["history"]=[r for r in out["history"] if r["id"] in published_ids]
     if e and not (u["role"] == "op" and d["wf_status"] in ("review", "evaluating", "error", "new")):
         out["evaluation"] = eval_view(e, u)
     if u["role"] in REVIEWERS:
@@ -240,6 +251,8 @@ def eval_view(e, u=None):
 def evaluation(eid: int, u=Depends(current_user)):
     e = one("SELECT * FROM evaluations WHERE id=%s", eid) or bad("Оценка не найдена", 404)
     visible_dialog(u, e["dialog_id"])
+    if u["role"] == "op" and not e["published"]:
+        bad("Историческая оценка недоступна", 404)
     return eval_view(e, u)
 
 
@@ -284,6 +297,13 @@ def check_record(r, n):
 
 @app.post("/api/dialogs")
 def upload(body: dict = Body(...), u=Depends(roles("qa", "adm"))):
+    result = import_upload(body, u)
+    if result["added"] and body.get("evaluate", True):
+        result["job"] = engine.start_job(f"Оценка {len(result['added'])} новых диалогов", "evaluate", result["added"], u["id"])
+    return result
+
+@atomic_workflow
+def import_upload(body, u):
     """Загрузка: {records:[...]} в формате выгрузки, либо {text, channel?, language?}."""
     if body.get("text") is not None:
         tr, errs = parse_text(body["text"])
@@ -326,10 +346,7 @@ def upload(body: dict = Body(...), u=Depends(roles("qa", "adm"))):
         engine.event(did, u["id"], f"Загружен ({'ввод текстом' if src == 'text' else 'файл'})")
         added.append(did)
     engine.audit(u["id"], f"Загрузил диалоги: {len(added)}", ", ".join(added[:20]))
-    job = None
-    if added and body.get("evaluate", True):
-        job = engine.start_job(f"Оценка {len(added)} новых диалогов", "evaluate", added, u["id"])
-    return {"added": added, "skipped": skipped, "job": job}
+    return {"added": added, "skipped": skipped, "job": None}
 
 
 @app.post("/api/evaluate")
@@ -368,8 +385,11 @@ def retry(eid: int, u=Depends(roles(*REVIEWERS))):
 
 # ---------- решения QA ----------
 @app.post("/api/dialogs/{did}/override")
+@atomic_workflow
 def override(did: str, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
     d = visible_dialog(u, did)
+    if one("SELECT id FROM evaluations WHERE dialog_id=%s AND status='running'", did):
+        bad("Дождитесь завершения оценки", 409)
     e = engine.current_eval(did) or bad("Диалог ещё не оценён", 409)
     if e["status"] == "running":
         bad("Оценка ещё идёт. Дождитесь завершения", 409)
@@ -381,6 +401,8 @@ def override(did: str, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
     if len(reason) < 5:
         bad("Укажите причину изменения: она попадёт в историю и в отчёт о расхождениях с моделью", 422)
     old = engine.items_of(e["id"])[c["id"]]["answer"]
+    if old == ans:
+        return {"total":e["total"]}
     eid = engine.override(did, c["id"], ans, reason, u["id"])
     new = one("SELECT total FROM evaluations WHERE id=%s", eid)["total"]
     engine.event(did, u["id"], f"Критерий {c['id'][1:]} «{c['name']}»: {lbl(c, old)} → {lbl(c, ans)}. {reason}")
@@ -407,11 +429,17 @@ def lbl(c, a):
 
 
 @app.post("/api/dialogs/{did}/confirm")
+@atomic_workflow
 def confirm(did: str, u=Depends(roles(*REVIEWERS))):
     d = visible_dialog(u, did)
+    if one("SELECT id FROM evaluations WHERE dialog_id=%s AND status='running'", did):
+        bad("Дождитесь завершения оценки", 409)
     e = engine.current_eval(did) or bad("Диалог ещё не оценён", 409)
+    if e["status"] != "done":
+        bad("Нельзя публиковать незавершённую оценку", 409)
     if d["wf_status"] not in ("review",):
         bad("Подтверждать нечего: оценка не ждёт проверки", 409)
+    run("UPDATE evaluations SET published=true WHERE id=%s",e["id"])
     run("UPDATE dialogs SET wf_status='published' WHERE id=%s", did)
     engine.event(did, u["id"], "Оценка проверена и опубликована оператору")
     engine.audit(u["id"], "Подтвердил оценку", did, {"total": float(e["total"]) if e["total"] is not None else None})
@@ -424,9 +452,10 @@ def confirm(did: str, u=Depends(roles(*REVIEWERS))):
 
 # ---------- оператор и апелляции ----------
 @app.post("/api/dialogs/{did}/acknowledge")
+@atomic_workflow
 def acknowledge(did: str, u=Depends(roles("op"))):
     d = visible_dialog(u, did)
-    if d["wf_status"] != "published":
+    if d["wf_status"] not in ("published", "revised"):
         bad("Ознакомиться можно только с новой опубликованной оценкой", 409)
     run("UPDATE dialogs SET wf_status='acknowledged' WHERE id=%s", did)
     engine.event(did, u["id"], "Оператор ознакомился с оценкой")
@@ -435,8 +464,11 @@ def acknowledge(did: str, u=Depends(roles("op"))):
 
 
 @app.post("/api/dialogs/{did}/appeal")
+@atomic_workflow
 def appeal(did: str, body: dict = Body(...), u=Depends(roles("op"))):
     d = visible_dialog(u, did)
+    if one("SELECT id FROM evaluations WHERE dialog_id=%s AND status='running'",did):
+        bad("Дождитесь завершения оценки",409)
     if d["wf_status"] not in ("published", "acknowledged", "revised"):
         bad("Апелляцию можно подать на опубликованную оценку, по которой нет открытой апелляции", 409)
     e = engine.current_eval(did)
@@ -448,12 +480,19 @@ def appeal(did: str, body: dict = Body(...), u=Depends(roles("op"))):
         bad("Выберите хотя бы один критерий и ответ, который считаете верным", 422)
     if len(text) < 10:
         bad("Опишите довод: без него QA не сможет рассмотреть апелляцию", 422)
+    if not isinstance(want, list) or any(not isinstance(w, dict) for w in want):
+        bad("Некорректный список критериев", 422)
+    if len({w.get("crit") for w in want}) != len(want):
+        bad("Критерии не должны повторяться", 422)
+    evidence = sorted(set(int(n) for n in re.findall(r"#(\d+)", text)))
+    if not evidence or any(n < 1 or n > len(d["transcript"]) for n in evidence):
+        bad("Укажите существующую реплику в аргументе, например #1", 422)
     out = []
     for w in want:
         c = cl.get(w.get("crit")) or bad("Нет такого критерия", 422)
         if w.get("want") not in c["answers"] or w["want"] == items[c["id"]]["answer"]:
             bad(f"Критерий {c['id'][1:]}: выберите ответ, отличный от текущего", 422)
-        out.append({"crit": c["id"], "from": items[c["id"]]["answer"], "want": w["want"]})
+        out.append({"crit": c["id"], "from": items[c["id"]]["answer"], "want": w["want"], "evidence": evidence})
     a = run("""INSERT INTO appeals(dialog_id,eval_id,operator_id,text,items,score_before) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id""",
             did, e["id"], u["id"], text, J(out), e["total"])["id"]
     run("UPDATE dialogs SET wf_status='appeal' WHERE id=%s", did)
@@ -487,17 +526,22 @@ def appeal_one(aid: int, u=Depends(current_user)):
 
 
 @app.post("/api/appeals/{aid}/decide")
+@atomic_workflow
 def decide(aid: int, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
     ap = one("SELECT * FROM appeals WHERE id=%s", aid) or bad("Апелляция не найдена", 404)
     if ap["status"] != "open":
         bad("Апелляция уже рассмотрена", 409)
     dec, comment = body.get("decisions") or {}, str(body.get("comment", "")).strip()
+    if not isinstance(dec, dict) or any(type(v) is not bool for v in dec.values()):
+        bad("Решения должны быть логическими значениями", 422)
     if any(it["crit"] not in dec for it in ap["items"]):
         bad("Примите решение по каждому критерию", 422)
     if len(comment) < 5:
         bad("Добавьте комментарий: оператор увидит его вместе с решением", 422)
     d = one("SELECT * FROM dialogs WHERE id=%s", ap["dialog_id"])
     cur = engine.current_eval(d["id"])
+    if not cur or cur["id"] != ap["eval_id"]:
+        bad("Оценка изменилась после подачи апелляции; требуется повторная проверка QA", 409)
     cl = {c["id"]: c for c in engine.checklist(cur["checklist_id"])["criteria"]}
     before = cur["total"]
     accepted = [it for it in ap["items"] if dec[it["crit"]] and it["crit"] in cl]
@@ -518,7 +562,8 @@ def decide(aid: int, body: dict = Body(...), u=Depends(roles(*REVIEWERS))):
 
 
 @app.post("/api/appeals/{aid}/withdraw")
-def withdraw(aid: int, body: dict = Body(...), u=Depends(roles("lead", "op"))):
+@atomic_workflow
+def withdraw(aid: int, body: dict = Body(...), u=Depends(roles("op"))):
     ap = one("SELECT * FROM appeals WHERE id=%s", aid) or bad("Апелляция не найдена", 404)
     d = visible_dialog(u, ap["dialog_id"])
     if ap["status"] != "open":
@@ -590,7 +635,7 @@ def checklist_one(cid: int, u=Depends(current_user)):
     c["errors"] = validate_cl(c["criteria"])
     # сколько текущих оценок сделано по другой версии — от этого зависит, показывать ли «Применить к старым оценкам»
     c["stale"] = one("SELECT count(*) AS n FROM evaluations WHERE is_current AND checklist_id<>%s AND status<>'running'", cid)["n"] \
-        if c["status"] == "published" else 0
+        if c["status"] == "published" and u["role"] in ("qa","adm") else 0
     return c
 
 
@@ -654,6 +699,7 @@ def diff(draft):
 
 
 @app.post("/api/checklists/draft")
+@atomic_workflow
 def new_draft(u=Depends(roles("qa"))):
     if one("SELECT id FROM checklists WHERE status='draft'"):
         bad("Черновик уже есть. Продолжите его или удалите", 409)
@@ -666,6 +712,7 @@ def new_draft(u=Depends(roles("qa"))):
 
 
 @app.put("/api/checklists/{cid}")
+@atomic_workflow
 def save_draft(cid: int, body: dict = Body(...), u=Depends(roles("qa"))):
     c = engine.checklist(cid) or bad("Версия не найдена", 404)
     if c["status"] != "draft":
@@ -699,6 +746,7 @@ def save_draft(cid: int, body: dict = Body(...), u=Depends(roles("qa"))):
 
 
 @app.delete("/api/checklists/{cid}")
+@atomic_workflow
 def drop_draft(cid: int, u=Depends(roles("qa"))):
     c = engine.checklist(cid) or bad("Версия не найдена", 404)
     if c["status"] != "draft":
@@ -743,6 +791,7 @@ def trial(cid: int, body: dict = Body(...), u=Depends(roles("qa"))):
 
 
 @app.post("/api/checklists/{cid}/publish")
+@atomic_workflow
 def publish(cid: int, body: dict = Body(default={}), u=Depends(roles("qa"))):
     c = engine.checklist(cid) or bad("Версия не найдена", 404)
     if c["status"] != "draft":
@@ -775,8 +824,22 @@ def apply(cid: int, u=Depends(roles("qa"))):
 
 
 # ======================= аналитика =======================
-def current_rows(u, extra="true"):
+def period_scope(u, start="", end=""):
     w, a = vis(u)
+    try:
+        lo=date.fromisoformat(start) if start else None
+        hi=date.fromisoformat(end) if end else None
+        if lo and hi and lo>hi: raise ValueError()
+    except ValueError:
+        bad("Некорректный период",422)
+    if lo:
+        w+=" AND d.occurred_at >= %s"; a.append(lo)
+    if hi:
+        w+=" AND d.occurred_at < %s"; a.append(hi+timedelta(days=1))
+    return w,a
+
+def current_rows(u, extra="true", start="", end=""):
+    w, a = period_scope(u,start,end)
     return all_(f"""SELECT d.id, d.operator, d.team, d.language, d.channel, d.wf_status, e.id AS eval_id, e.total, e.critical, e.checklist_id
                     FROM dialogs d JOIN evaluations e ON e.dialog_id=d.id AND e.is_current
                     WHERE e.status='done' AND {w} AND {extra}""", *a)
@@ -788,27 +851,13 @@ def avg(xs):
 
 
 @app.get("/api/stats/overview")
-def overview(u=Depends(roles("lead", "qa"))):
-    rows = current_rows(u)
-    crit = engine.active_checklist()["criteria"]
-    ids = [r["eval_id"] for r in rows]
-    items = all_("SELECT eval_id, crit_id, answer, explanation, evidence FROM eval_items WHERE eval_id = ANY(%s)", ids) if ids else []
-    by = {}
-    for it in items:
-        by.setdefault(it["crit_id"], []).append(it)
-    did_of = {r["eval_id"]: r["id"] for r in rows}
-    loss = []
-    for c in crit:
-        if c["type"] == "flag":
-            continue
-        its = by.get(c["id"], [])
-        app_ = [i for i in its if i["answer"] not in (None, "na")]
-        fl = [i for i in app_ if engine.is_failed(c, i["answer"])]
-        lost = sum((1 - (int(i["answer"]) / engine.scale_max(c) if i["answer"].isdigit() else 1 if i["answer"] == "no" else 0)) * c["weight"] for i in app_)
-        loss.append({"crit": c["id"], "name": c["name"], "applicable": len(app_), "failed": len(fl),
-                     "rate": round(len(fl) / len(app_) * 100) if app_ else 0, "points": round(lost / max(len(rows), 1), 2),
-                     "examples": [{"dialog": did_of[i["eval_id"]], "text": i["explanation"]} for i in fl[:3]]})
-    loss.sort(key=lambda x: -x["points"])
+def overview(start: str = "", end: str = "", u=Depends(roles("qa", "lead"))):
+    rows = current_rows(u,start=start,end=end)
+    from .analytics import criterion_losses
+    ids=[r["eval_id"] for r in rows]
+    items=all_("SELECT * FROM eval_items WHERE eval_id=ANY(%s)",ids) if ids else []
+    checklists={r["checklist_id"]:engine.checklist(r["checklist_id"]) for r in rows}
+    loss=criterion_losses(rows,items,checklists)
     seg = {}
     for r in rows:
         k = "Звонки" if r["channel"] == "voice call" else {"RU": "Чаты · русский", "KZ": "Чаты · казахский", "EN": "Чаты · английский"}.get(r["language"], r["language"])
@@ -816,7 +865,7 @@ def overview(u=Depends(roles("lead", "qa"))):
     teams = {}
     for r in rows:
         teams.setdefault(r["team"], []).append(r)
-    w, a = vis(u)
+    w, a = period_scope(u,start,end)
     allc = one(f"SELECT count(*) AS n, count(e.id) AS ev FROM dialogs d LEFT JOIN evaluations e ON e.dialog_id=d.id AND e.is_current WHERE {w}", *a)
     cost = one(f"""SELECT coalesce(sum(e.cost),0) AS cost, coalesce(avg(e.cost) FILTER (WHERE e.trigger IN ('initial','import')),0) AS per,
                           coalesce(avg(e.seconds) FILTER (WHERE e.trigger IN ('initial','import')),0) AS sec
@@ -836,43 +885,40 @@ def overview(u=Depends(roles("lead", "qa"))):
 
 
 @app.get("/api/stats/team")
-def team_stats(u=Depends(roles("lead", "qa"))):
-    rows = current_rows(u)
-    crit = [c for c in engine.active_checklist()["criteria"] if c["type"] != "flag"]
-    ids = [r["eval_id"] for r in rows]
-    items = all_("SELECT eval_id, crit_id, answer FROM eval_items WHERE eval_id = ANY(%s)", ids) if ids else []
-    ans = {}
-    for it in items:
-        ans.setdefault(it["eval_id"], {})[it["crit_id"]] = it["answer"]
+def team_stats(start: str = "", end: str = "", u=Depends(roles("lead", "qa"))):
+    rows = current_rows(u,start=start,end=end)
+    from .analytics import criterion_losses
+    ids=[r["eval_id"] for r in rows]
+    items=all_("SELECT * FROM eval_items WHERE eval_id=ANY(%s)",ids) if ids else []
+    checklists={r["checklist_id"]:engine.checklist(r["checklist_id"]) for r in rows}
     ops = {}
     for r in rows:
         ops.setdefault(r["operator"], []).append(r)
     out = []
     for name, rs in ops.items():
-        fails = sorted(((sum(1 for r in rs if engine.is_failed(c, ans.get(r["eval_id"], {}).get(c["id"]))), c) for c in crit), key=lambda x: -x[0])
-        w = fails[0] if fails and fails[0][0] else None
+        losses=criterion_losses(rs,items,checklists)
+        failures=sorted((x for x in losses if x["failed"]),key=lambda x:-x["failed"])
+        w=failures[0] if failures else None
         out.append({"operator": name, "team": rs[0]["team"], "n": len(rs), "avg": avg(r["total"] for r in rs),
-                    "critical": sum(1 for r in rs if r["critical"]), "weak": {"crit": w[1]["id"], "name": w[1]["name"], "n": w[0]} if w else None,
+                    "critical": sum(1 for r in rs if r["critical"]), "weak": {"crit": w["crit"], "name": w["name"], "n": w["failed"]} if w else None,
                     "appeals": one("SELECT count(*) AS n FROM appeals ap JOIN dialogs d ON d.id=ap.dialog_id WHERE d.operator=%s AND ap.status='open'", name)["n"]})
     out.sort(key=lambda x: (x["avg"] if x["avg"] is not None else 999))
     return {"team": u.get("team"), "operators": out}
 
 
 @app.get("/api/stats/me")
-def my_stats(u=Depends(roles("op"))):
-    rows = current_rows(u, "d.wf_status NOT IN ('review','new','evaluating','error')")
-    crit = [c for c in engine.active_checklist()["criteria"] if c["type"] != "flag"]
-    ids = [r["eval_id"] for r in rows]
-    items = all_("SELECT eval_id, crit_id, answer FROM eval_items WHERE eval_id = ANY(%s)", ids) if ids else []
-    fails = {}
-    for it in items:
-        c = next((x for x in crit if x["id"] == it["crit_id"]), None)
-        if c and engine.is_failed(c, it["answer"]):
-            fails[c["id"]] = fails.get(c["id"], 0) + 1
-    weak = max(fails.items(), key=lambda x: x[1]) if fails else None
-    ap = one("SELECT count(*) AS n, count(*) FILTER (WHERE status='open') AS open FROM appeals WHERE operator_id=%s", u["id"])
+def my_stats(start: str = "", end: str = "", u=Depends(roles("op"))):
+    rows = current_rows(u, "d.wf_status NOT IN ('review','new','evaluating','error')",start=start,end=end)
+    from .analytics import criterion_losses
+    ids=[r["eval_id"] for r in rows]
+    items=all_("SELECT * FROM eval_items WHERE eval_id=ANY(%s)",ids) if ids else []
+    checklists={r["checklist_id"]:engine.checklist(r["checklist_id"]) for r in rows}
+    failures=sorted((x for x in criterion_losses(rows,items,checklists) if x["failed"]),key=lambda x:-x["failed"])
+    weak=failures[0] if failures else None
+    w,a=period_scope(u,start,end)
+    ap = one(f"SELECT count(*) AS n, count(*) FILTER (WHERE ap.status='open') AS open FROM appeals ap JOIN dialogs d ON d.id=ap.dialog_id WHERE {w}", *a)
     return {"n": len(rows), "avg": avg(r["total"] for r in rows), "new": sum(1 for r in rows if r["wf_status"] == "published"),
-            "weak": {"crit": weak[0], "name": next(c["name"] for c in crit if c["id"] == weak[0]), "n": weak[1]} if weak else None,
+            "weak": {"crit": weak["crit"], "name": weak["name"], "n": weak["failed"]} if weak else None,
             "appeals": ap}
 
 
@@ -880,7 +926,7 @@ def my_stats(u=Depends(roles("op"))):
 def calibration(u=Depends(roles("qa"))):
     """Ответы модели (первая оценка) против эталонной разметки."""
     gold = all_("SELECT * FROM gold")
-    crit = {c["id"]: c for c in engine.active_checklist()["criteria"]}
+    names = {}
     g_by = {}
     for g in gold:
         g_by.setdefault(g["dialog_id"], {})[g["crit_id"]] = g
@@ -890,13 +936,16 @@ def calibration(u=Depends(roles("qa"))):
         if not first:
             continue
         cl = engine.checklist(first["checklist_id"])
+        crit={c["id"]:c for c in cl["criteria"]}
         items = engine.items_of(first["id"])
         for cid, g in gs.items():
             it = items.get(cid)
             if not it or it["status"] != "ok" or cid not in crit:
                 continue
             ok = it["ai_answer"] == g["answer"]
-            p = per.setdefault(cid, [0, 0]); p[0] += 1; p[1] += ok
+            key=(cl["id"],cid)
+            names[key]=f"{crit[cid]['name']} · v{cl['version']}"
+            p = per.setdefault(key, [0, 0]); p[0] += 1; p[1] += ok
             if not ok:
                 dis.append({"dialog": did, "crit": cid, "ai": it["ai_answer"], "gold": g["answer"], "unsure": g["unsure"],
                             "explanation": it["explanation"], "confidence": it["confidence"]})
@@ -906,7 +955,7 @@ def calibration(u=Depends(roles("qa"))):
             maes.append(abs(ga - aa))
     n = sum(p[0] for p in per.values())
     return {"agreement": round(sum(p[1] for p in per.values()) / n * 100, 1) if n else None, "answers": n,
-            "per": [{"crit": k, "name": crit[k]["name"], "n": v[0], "ok": v[1], "rate": round(v[1] / v[0] * 100)} for k, v in sorted(per.items())],
+            "per": [{"crit": k[1], "checklist_id":k[0], "name": names[k], "n": v[0], "ok": v[1], "rate": round(v[1] / v[0] * 100)} for k, v in sorted(per.items())],
             "disagreements": dis, "mae": round(sum(maes) / len(maes), 2) if maes else None, "dialogs": len(maes)}
 
 
@@ -917,13 +966,20 @@ def users(u=Depends(roles("adm"))):
 
 
 @app.patch("/api/users/{uid}")
+@atomic_workflow
 def user_upd(uid: int, body: dict = Body(...), u=Depends(roles("adm"))):
     t = one("SELECT * FROM users WHERE id=%s", uid) or bad("Пользователь не найден", 404)
     if uid == u["id"] and (body.get("active") is False or body.get("role", "adm") != "adm"):
         bad("Нельзя заблокировать себя или снять с себя роль администратора", 409)
     role, active, team = body.get("role", t["role"]), body.get("active", t["active"]), body.get("team", t["team"])
-    if role not in auth.ACTIVE_ROLES:
+    if type(active) is not bool:
+        bad("Активность должна быть логическим значением",422)
+    if role not in ("qa", "op", "lead", "adm"):
         bad("Неизвестная роль", 422)
+    if role == "op" and one("SELECT id FROM users WHERE role='op' AND name=%s AND id<>%s",t["name"],uid):
+        bad("Имя уже связано с другим оператором; требуется сопоставление идентичности",409)
+    if role == "lead" and active and not team:
+        bad("Для руководителя требуется группа", 422)
     run("UPDATE users SET role=%s, active=%s, team=%s WHERE id=%s", role, active, team, uid)
     if not active:
         run("DELETE FROM sessions WHERE user_id=%s", uid)
@@ -932,6 +988,7 @@ def user_upd(uid: int, body: dict = Body(...), u=Depends(roles("adm"))):
 
 
 @app.post("/api/users")
+@atomic_workflow
 def user_add(body: dict = Body(...), u=Depends(roles("adm"))):
     lg, name, role = str(body.get("login", "")).strip().lower(), str(body.get("name", "")).strip(), body.get("role")
     if not re.fullmatch(r"[a-z0-9._-]{2,32}", lg):
@@ -940,6 +997,10 @@ def user_add(body: dict = Body(...), u=Depends(roles("adm"))):
         bad("Укажите имя и роль", 422)
     if one("SELECT 1 AS x FROM users WHERE login=%s", lg):
         bad("Такой логин уже есть", 409)
+    if role == "op" and one("SELECT id FROM users WHERE name=%s", name):
+        bad("Имя оператора уже связано с учётной записью", 409)
+    if role == "lead" and not body.get("team"):
+        bad("Для руководителя требуется группа",422)
     pw = auth.secrets.token_urlsafe(9)
     run("INSERT INTO users(login,name,role,team,pw_hash) VALUES (%s,%s,%s,%s,%s)", lg, name, role, body.get("team") or None, auth.hash_pw(pw))
     engine.audit(u["id"], f"Добавил пользователя {name}", lg, {"role": role})

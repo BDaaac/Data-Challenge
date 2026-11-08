@@ -47,7 +47,7 @@ const path = require('node:path');
    assert((await p.locator('.lead-case').innerText()).includes(appeal.text));
    assert.equal(await p.getByRole('button',{name:/Принять|Отклонить/}).count(),0);
    await p.selectOption('#lead-ap-status','rejected');await p.waitForFunction(()=>!document.querySelector('.lead-case'));
-   assert((await p.locator('.lead-appeals').innerText()).includes('Апелляций нет'));
+   assert((await p.locator('.lead-appeals').innerText()).includes('Апелляций по выбранным условиям нет'));
   }
   assert.deepEqual(errors,[]);
   console.log('PASS nine lead screens at desktop/mobile, language/search filters, employee navigation, feedback payload and appeal detail/filter (mocked writes/appeals)');

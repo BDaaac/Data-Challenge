@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "description": "Browser acceptance tests for the isolated Freedom Quality test server",
+  "devDependencies": {"playwright": "1.62.1"},
+  "scripts": {"test": "node browser.cjs"}
+}

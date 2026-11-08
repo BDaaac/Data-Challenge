@@ -5,7 +5,7 @@ const path=require('node:path');
  const browser=await chromium.launch({headless:true,executablePath:process.env.UX_CHROMIUM});
  const base=process.env.CQA_BASE_URL||'http://127.0.0.1:8000';
  const users=(await fetch(base+'/api/auth/demo').then(r=>r.json())).users;
- const routes={op:['home','my','appeals','rules'],lead:['home','group','team','dialogs','appeals','qa-control'],adm:['home','users','settings','upload','dialogs','audit'],qa:['home','dialogs','checklists','appeals','queue']};
+ const routes={op:['home','my','appeals','rules','development'],lead:['home','group','team','dialogs','appeals','qa-control','development'],adm:['home','users','settings','upload','dialogs','audit','integrations'],qa:['home','dialogs','checklists','appeals','queue']};
  const results=[];
  try {for(const [role,pages] of Object.entries(routes)){
  if(process.env.ROLE_CHECK_ONLY&&!process.env.ROLE_CHECK_ONLY.split(',').includes(role))continue;

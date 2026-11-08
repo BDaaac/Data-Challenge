@@ -10,3 +10,5 @@ runs/web_backup_before_fixes/
 runs/web_backup_before_v4/
 runs/app_backup_before_fixes/
 *.log
+
+tests/node_modules/

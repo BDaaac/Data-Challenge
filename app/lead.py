@@ -1,9 +1,11 @@
 """Team-lead workspace and persistent coaching plans, scoped to the lead's team."""
 from datetime import date
+from uuid import uuid4
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from .auth import roles
-from .db import all_, one, tx
+from .db import all_, one, tx, run, atomic_workflow
+from . import engine
 
 router = APIRouter(prefix="/api/lead")
 
@@ -31,7 +33,8 @@ def workspace(u=Depends(roles("lead"))):
         r["criteria"] = r["criteria"] or []
     return {"rows": rows,
             "members": all_("SELECT id,name FROM users WHERE role='op' AND active AND team=%s ORDER BY name", team),
-            "plans": all_("SELECT * FROM coaching_plans WHERE team=%s ORDER BY created_at DESC,id DESC", team),
+            "plans": all_("""SELECT p.*, t.id AS task_id, t.status AS task_status FROM coaching_plans p
+                LEFT JOIN development_tasks t ON t.coaching_plan_id=p.id WHERE p.team=%s ORDER BY p.created_at DESC,p.id DESC""", team),
             "events": all_("""SELECT ev.at,ev.text,d.id AS dialog_id,d.operator FROM events ev
                 JOIN dialogs d ON d.id=ev.dialog_id WHERE d.team=%s ORDER BY ev.at DESC,ev.id DESC LIMIT 30""", team)}
 
@@ -62,6 +65,7 @@ def plan_fields(body, team):
 
 
 @router.post("/plans")
+@atomic_workflow
 def create_plan(body: dict = Body(...), u=Depends(roles("lead"))):
     team = require_team(u)
     title, note, operator, dialog_id, kind, due = plan_fields(body, team)
@@ -82,15 +86,28 @@ def create_plan(body: dict = Body(...), u=Depends(roles("lead"))):
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""", (team, operator, dialog_id, kind, title, note, due, u["id"], criterion, criterion_name, expected, priority))
         row = dict(c.fetchone())
         c.execute("INSERT INTO audit(user_id,action,object) VALUES(%s,%s,%s)", (u["id"], "Добавил запись для развития сотрудника", str(row["id"])))
+    if operator and kind in ("task", "plan"):
+        operators = all_("SELECT id FROM users WHERE name=%s AND team=%s AND role='op' AND active", operator, team)
+        if len(operators) != 1:
+            raise HTTPException(409, "Нельзя однозначно определить активного сотрудника")
+        instruction = "\n\n".join(part for part in (title, expected, note) if part)
+        task = run("""INSERT INTO development_tasks(dialog_id,operator_id,created_by,request_key,instruction,team,coaching_plan_id)
+            VALUES(%s,%s,%s,%s,%s,%s,%s) RETURNING id""", dialog_id, operators[0]["id"], u["id"], str(uuid4()), instruction, team, row["id"])
+        run("INSERT INTO development_events(task_id,user_id,action,text) VALUES(%s,%s,'assigned',%s)",task["id"],u["id"],instruction)
+        engine.notify("Новая задача развития", f"development/{task['id']}", user_ids=[operators[0]["id"]])
+        row.update(task_id=task["id"], task_status="assigned")
     return row
 
 
 @router.patch("/plans/{pid}")
+@atomic_workflow
 def update_plan(pid: int, body: dict = Body(...), u=Depends(roles("lead"))):
     team = require_team(u)
     status = body.get("status")
     if status not in ("planned", "work", "done"):
         raise HTTPException(422, "Неизвестный статус")
+    if one("SELECT t.id FROM development_tasks t JOIN coaching_plans p ON p.id=t.coaching_plan_id WHERE p.id=%s AND p.team=%s",pid,team):
+        raise HTTPException(409, "Откройте задачу, чтобы проверить результат сотрудника")
     with tx() as c:
         c.execute("UPDATE coaching_plans SET status=%s,updated_at=now() WHERE id=%s AND team=%s RETURNING *", (status, pid, team))
         row = c.fetchone()

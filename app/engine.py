@@ -4,7 +4,7 @@ import hashlib, json, sys, time, traceback
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal, ROUND_HALF_UP
 
-from .db import ROOT, J, all_, one, run, tx
+from .db import atomic_workflow, ROOT, J, all_, one, run, tx
 
 sys.path.insert(0, str(ROOT / "scripts"))
 import cqa  # noqa: E402  ядро промптов и вызова модели
@@ -232,7 +232,7 @@ def run_evaluation(eval_id, only=None):
     rec ={"conversation_id": d["id"], "channel": d["channel"], "language": d["language"], "transcript": d["transcript"]}
     facts = cqa.facts_of(rec)
     prefix = {"type": "text", "text": "ТРАНСКРИПТ:\n" + cqa.transcript_text(rec), "cache_control": {"type": "ephemeral"}}
-    runner = cqa.Runner(model=ev["model"], budget=float(setting("budget")))
+    runner = cqa.Runner(model=ev["model"], budget=float(setting("budget"))) if todo else None
     t0 = time.time()
 
     def one_crit(cid):
@@ -251,17 +251,25 @@ def run_evaluation(eval_id, only=None):
         one_crit(first)  # первый запрос записывает кеш транскрипта
         with ThreadPoolExecutor(8) as ex:
             list(ex.map(one_crit, rest))
-    status, reasons, total, critical = finalize(eval_id)
-    run("UPDATE evaluations SET seconds=%s WHERE id=%s", round(time.time() - t0, 2), eval_id)
+    complete_evaluation(eval_id, round(time.time() - t0, 2))
+
+
+@atomic_workflow
+def complete_evaluation(eval_id, seconds=None):
+    finalize(eval_id)
+    if seconds is not None:
+        run("UPDATE evaluations SET seconds=%s WHERE id=%s",seconds,eval_id)
     after_evaluation(eval_id)
 
 
+@atomic_workflow
 def after_evaluation(eval_id):
     """Сделать оценку текущей, выставить статус диалога, разослать уведомления."""
     ev = one("SELECT * FROM evaluations WHERE id=%s", eval_id)
     d = one("SELECT * FROM dialogs WHERE id=%s", ev["dialog_id"])
     with tx() as c:
-        c.execute("UPDATE evaluations SET is_current=(id=%s) WHERE dialog_id=%s", (eval_id, d["id"]))
+        c.execute("UPDATE evaluations SET is_current=false WHERE dialog_id=%s", (d["id"],))
+        c.execute("UPDATE evaluations SET is_current=true WHERE id=%s", (eval_id,))
     reasons = ev["review"] or []
     prev = d["wf_status"]
     if ev["status"] == "partial":
@@ -272,6 +280,8 @@ def after_evaluation(eval_id):
         wf = prev if prev != "evaluating" else "published"
         if ev["critical"] and ev["calls"] and prev in ("published", "acknowledged", "revised"):  # новый ответ модели — ещё раз человеку
             wf = "review"
+    if wf in ("published","acknowledged","revised","appeal"):
+        run("UPDATE evaluations SET published=true WHERE id=%s",eval_id)
     run("UPDATE dialogs SET wf_status=%s WHERE id=%s", wf, d["id"])
     cl = checklist(ev["checklist_id"])
     total = "—" if ev["total"] is None else f"{float(ev['total']):.2f}".replace(".", ",")
@@ -321,7 +331,29 @@ def new_evaluation(dialog_id, cl, user_id, trigger, job_id=None, base=None, forc
 
 
 def start_job(title, kind, dialog_ids, user_id, cl=None, only_crit=None):
-    """Пакет оценки: диалоги параллельно (по 3), внутри — критерии параллельно (по 8)."""
+    result,plan = _plan_job(title,kind,dialog_ids,user_id,cl,only_crit)
+    if plan:
+        for eid,pending in plan:
+            DIALOG_POOL.submit(_safe_run,eid)
+        threading.Thread(target=_finish_job,args=(result["id"],user_id,title),daemon=True).start()
+    return result
+
+
+@atomic_workflow
+def _plan_job(title, kind, dialog_ids, user_id, cl=None, only_crit=None):
+    from fastapi import HTTPException
+    dialog_ids=list(dict.fromkeys(dialog_ids))
+    if not dialog_ids: raise HTTPException(422,"Выберите диалоги")
+    for did in dialog_ids:
+        d=one("SELECT wf_status FROM dialogs WHERE id=%s",did)
+        if not d: raise HTTPException(404,"Диалог не найден")
+        if d["wf_status"]=="appeal": raise HTTPException(409,"Сначала завершите апелляцию")
+    cl = cl or active_checklist()
+    existing=one("SELECT * FROM jobs WHERE dialog_ids=%s AND finished_at IS NULL ORDER BY id DESC LIMIT 1",J(dialog_ids))
+    if existing:
+        if existing["only_crit"] != (only_crit or None) or one("SELECT id FROM evaluations WHERE job_id=%s AND checklist_id<>%s",existing["id"],cl["id"]):
+            raise HTTPException(409,"Другой вариант оценки уже выполняется")
+        return {"id":existing["id"],"title":existing["title"],"dialogs":len(dialog_ids)}, []
     cl = cl or active_checklist()
     job = run("INSERT INTO jobs(title, kind, dialog_ids, only_crit, created_by) VALUES (%s,%s,%s,%s,%s) RETURNING id",
               title, kind, J(dialog_ids), J(only_crit) if only_crit else None, user_id)["id"]
@@ -330,17 +362,13 @@ def start_job(title, kind, dialog_ids, user_id, cl=None, only_crit=None):
         base = current_eval(did)
         running = one("SELECT id FROM evaluations WHERE dialog_id=%s AND checklist_id=%s AND status='running'", did, cl["id"])
         if running:  # повторное «Оценить» не создаёт вторую оценку
-            run("UPDATE evaluations SET job_id=%s WHERE id=%s", job, running["id"])
-            continue
+            raise HTTPException(409,"Диалог уже оценивается в другом пакете")
         trigger = "initial" if not base else "rescore"
         eid, pending = new_evaluation(did, cl, user_id, trigger, job, base, force=only_crit or ())
         if not base:
             run("UPDATE dialogs SET wf_status='evaluating' WHERE id=%s", did)
         plan.append((eid, pending))
-    for eid, pending in plan:
-        DIALOG_POOL.submit(_safe_run, eid)
-    threading.Thread(target=_finish_job, args=(job, user_id, title), daemon=True).start()  # не занимаем поток оценки ожиданием
-    return {"id": job, "title": title, "dialogs": len(dialog_ids)}
+    return {"id":job,"title":title,"dialogs":len(dialog_ids)},plan
 
 
 def _safe_run(eid):
@@ -350,8 +378,7 @@ def _safe_run(eid):
         traceback.print_exc()
         try:
             run("UPDATE eval_items SET status='error', error='Внутренняя ошибка сервера' WHERE eval_id=%s AND status='pending'", eid)
-            finalize(eid)
-            after_evaluation(eid)
+            complete_evaluation(eid)
         except Exception:
             traceback.print_exc()
 
@@ -368,11 +395,24 @@ def _finish_job(job_id, user_id, title):
 
 
 def retry_failed(eval_id, user_id):
+    _prepare_retry(eval_id)
+    DIALOG_POOL.submit(_safe_run, eval_id)
+
+
+@atomic_workflow
+def _prepare_retry(eval_id):
+    from fastapi import HTTPException
+    ev=one("SELECT * FROM evaluations WHERE id=%s",eval_id)
+    if not ev or ev["status"]!="partial" or not ev["is_current"]:
+        raise HTTPException(409,"Оценка уже запущена или не требует повтора")
+    if one("SELECT id FROM evaluations WHERE dialog_id=%s AND status='running'",ev["dialog_id"]):
+        raise HTTPException(409,"Диалог уже оценивается")
+    if one("SELECT id FROM appeals WHERE dialog_id=%s AND status='open'",ev["dialog_id"]):
+        raise HTTPException(409,"Сначала завершите апелляцию")
     run("UPDATE eval_items SET status='pending', error=NULL WHERE eval_id=%s AND status='error'", eval_id)
     run("UPDATE evaluations SET status='running', finished_at=NULL, seconds=NULL WHERE id=%s", eval_id)
     d = one("SELECT dialog_id FROM evaluations WHERE id=%s", eval_id)["dialog_id"]
     run("UPDATE dialogs SET wf_status='evaluating' WHERE id=%s", d)
-    DIALOG_POOL.submit(_safe_run, eval_id)
 
 
 def recalc_all(cl, user_id):
@@ -391,6 +431,7 @@ def recalc_all(cl, user_id):
     return changed
 
 
+@atomic_workflow
 def override(dialog_id, crit_id, answer, reason, user_id, source="qa"):
     """Решение человека: новая версия оценки с изменённым ответом, история сохраняется."""
     base = current_eval(dialog_id)
@@ -400,6 +441,9 @@ def override(dialog_id, crit_id, answer, reason, user_id, source="qa"):
     run("""UPDATE eval_items SET answer=%s, source=%s, override_by=%s, override_reason=%s, override_at=now(), status='ok'
            WHERE eval_id=%s AND crit_id=%s""", answer, source, user_id, reason, eid, crit_id)
     finalize(eid)
+    if base["published"]:
+        run("UPDATE evaluations SET published=true WHERE id=%s",eid)
     with tx() as c:
-        c.execute("UPDATE evaluations SET is_current=(id=%s) WHERE dialog_id=%s", (eid, dialog_id))
+        c.execute("UPDATE evaluations SET is_current=false WHERE dialog_id=%s", (dialog_id,))
+        c.execute("UPDATE evaluations SET is_current=true WHERE id=%s", (eid,))
     return eid
