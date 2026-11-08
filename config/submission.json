@@ -1,4 +1,7 @@
 {
-  "team_name": "",
-  "model": {"mode": "external_api", "name": "claude-sonnet-5-5"}
+  "team_name": "Digital_Yakuza",
+  "model": {
+    "mode": "external_api",
+    "name": "claude-sonnet-5-5"
+  }
 }
